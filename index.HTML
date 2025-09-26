@@ -323,6 +323,28 @@
       }
     }
 
+    // helper to draw keys (consistent)
+    function drawKeys() {
+      const baseX = canvas.width - 170;
+      const baseY = canvas.height - 120;
+      const keys = [
+        {label:'⬆️', x: baseX+50, y: baseY, w:40, h:30},
+        {label:'⬅️', x: baseX, y: baseY+40, w:40, h:30},
+        {label:'⬇️', x: baseX+50, y: baseY+40, w:40, h:30},
+        {label:'➡️', x: baseX+100, y: baseY+40, w:40, h:30},
+        {label:'🔄', x: baseX+50, y: baseY+80, w:40, h:30}
+      ];
+      ctx.fillStyle = '#87cefa';
+      ctx.font = '16px sans-serif';
+      ctx.textBaseline = 'middle';
+      keys.forEach(k => {
+        ctx.fillRect(k.x, k.y, k.w, k.h);
+        ctx.fillStyle = 'white';
+        ctx.fillText(k.label, k.x + 10, k.y + k.h/2);
+        ctx.fillStyle = '#87cefa';
+      });
+    }
+
     function gameLoop() {
       ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -371,30 +393,19 @@
       ctx.fillText('Score: '+score, 10, 20);
 
       // Draw keypad inside canvas
-      const baseX = canvas.width - 170;
-      const baseY = canvas.height - 120;
-      const keys = [
-        {label:'⬆️', x: baseX+50, y: baseY, w:40, h:30, action:'up'},
-        {label:'⬅️', x: baseX, y: baseY+40, w:40, h:30, action:'left'},
-        {label:'⬇️', x: baseX+50, y: baseY+40, w:40, h:30, action:'down'},
-        {label:'➡️', x: baseX+100, y: baseY+40, w:40, h:30, action:'right'},
-        {label:'🔄', x: baseX+50, y: baseY+80, w:40, h:30, action:'restart'}
-      ];
-      keys.forEach(k => {
-        ctx.fillStyle = '#87cefa';
-        ctx.fillRect(k.x, k.y, k.w, k.h);
-        ctx.fillStyle = 'white';
-        ctx.fillText(k.label, k.x+10, k.y+20);
-      });
+      drawKeys();
 
       requestAnimationFrame(gameLoop);
     }
 
-    // ===== On-screen keypad click handler with flash effect =====
+    // ===== On-screen keypad click handler with proper canvas scaling + flash effect =====
     canvas.addEventListener('click', function(evt){
       const rect = canvas.getBoundingClientRect();
-      const x = evt.clientX - rect.left;
-      const y = evt.clientY - rect.top;
+      // scale client coords to canvas coords (handles CSS scaling / HiDPI)
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (evt.clientX - rect.left) * scaleX;
+      const y = (evt.clientY - rect.top) * scaleY;
 
       const baseX = canvas.width - 170;
       const baseY = canvas.height - 120;
@@ -408,18 +419,15 @@
       };
 
       for (const [key, r] of Object.entries(regions)) {
-        if (x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h) {
-          // flash effect
-          ctx.fillStyle = '#ffd580'; // light orange
+        if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+          // flash effect (light orange), then redraw keys
+          ctx.fillStyle = '#ffd580';
           ctx.fillRect(r.x, r.y, r.w, r.h);
           ctx.fillStyle = 'white';
-          ctx.fillText(r.label, r.x+10, r.y+20);
-          setTimeout(() => {
-            ctx.fillStyle = '#87cefa'; // baby blue
-            ctx.fillRect(r.x, r.y, r.w, r.h);
-            ctx.fillStyle = 'white';
-            ctx.fillText(r.label, r.x+10, r.y+20);
-          }, 150);
+          ctx.font = '16px sans-serif';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(r.label, r.x + 10, r.y + r.h/2);
+          setTimeout(() => { drawKeys(); }, 140);
 
           // actions
           if (key === 'up') move('up');
@@ -430,6 +438,16 @@
         }
       }
     });
+
+    // touch support (map touchstart to click behavior)
+    canvas.addEventListener('touchstart', function(e){
+      if(!e.touches || e.touches.length===0) return;
+      const t = e.touches[0];
+      // create a synthetic click with client coords
+      const clickEvent = new MouseEvent('click', {clientX: t.clientX, clientY: t.clientY, bubbles: true});
+      canvas.dispatchEvent(clickEvent);
+      e.preventDefault();
+    }, {passive:false});
 
     resetGame();
   </script>
