@@ -319,37 +319,57 @@
       const baseX = canvas.width - 170;
       const baseY = canvas.height - 120;
       const keys = [
-        {label:'⬆️', x: baseX+50, y: baseY},
-        {label:'⬅️', x: baseX, y: baseY+40},
-        {label:'⬇️', x: baseX+50, y: baseY+40},
-        {label:'➡️', x: baseX+100, y: baseY+40},
-        {label:'🔄', x: baseX+50, y: baseY+80}
+        {label:'⬆️', x: baseX+50, y: baseY, w:40, h:30, action:'up'},
+        {label:'⬅️', x: baseX, y: baseY+40, w:40, h:30, action:'left'},
+        {label:'⬇️', x: baseX+50, y: baseY+40, w:40, h:30, action:'down'},
+        {label:'➡️', x: baseX+100, y: baseY+40, w:40, h:30, action:'right'},
+        {label:'🔄', x: baseX+50, y: baseY+80, w:40, h:30, action:'restart'}
       ];
-      ctx.fillStyle = '#87cefa';
       keys.forEach(k => {
-        ctx.fillRect(k.x, k.y, 40, 30);
+        ctx.fillStyle = '#87cefa';
+        ctx.fillRect(k.x, k.y, k.w, k.h);
         ctx.fillStyle = 'white';
         ctx.fillText(k.label, k.x+10, k.y+20);
-        ctx.fillStyle = '#87cefa';
       });
 
       requestAnimationFrame(gameLoop);
     }
 
-    // On-screen keypad click handler
+    // On-screen keypad click handler with flash effect
     canvas.addEventListener('click', function(evt){
       const rect = canvas.getBoundingClientRect();
       const x = evt.clientX - rect.left;
       const y = evt.clientY - rect.top;
+
       const baseX = canvas.width - 170;
       const baseY = canvas.height - 120;
 
-      // regions for each key
-      if(x>baseX+50 && x<baseX+90 && y>baseY && y<baseY+30) move('up');
-      if(x>baseX && x<baseX+40 && y>baseY+40 && y<baseY+70) move('left');
-      if(x>baseX+50 && x<baseX+90 && y>baseY+40 && y<baseY+70) move('down');
-      if(x>baseX+100 && x<baseX+140 && y>baseY+40 && y<baseY+70) move('right');
-      if(x>baseX+50 && x<baseX+90 && y>baseY+80 && y<baseY+110) resetGame();
+      const regions = {
+        up:    {x: baseX+50, y: baseY, w:40, h:30},
+        left:  {x: baseX, y: baseY+40, w:40, h:30},
+        down:  {x: baseX+50, y: baseY+40, w:40, h:30},
+        right: {x: baseX+100, y: baseY+40, w:40, h:30},
+        restart:{x: baseX+50, y: baseY+80, w:40, h:30}
+      };
+
+      for (const [key, r] of Object.entries(regions)) {
+        if (x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h) {
+          // flash effect
+          ctx.fillStyle = 'orange';
+          ctx.fillRect(r.x, r.y, r.w, r.h);
+          setTimeout(() => {
+            ctx.fillStyle = '#87cefa';
+            ctx.fillRect(r.x, r.y, r.w, r.h);
+          }, 150);
+
+          // actions
+          if (key === 'up') move('up');
+          if (key === 'down') move('down');
+          if (key === 'left') move('left');
+          if (key === 'right') move('right');
+          if (key === 'restart') resetGame();
+        }
+      }
     });
 
     resetGame();
