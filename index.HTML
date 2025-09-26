@@ -162,25 +162,31 @@
     function tryPoki(){const code=document.getElementById('pokiCode').value.trim();if(code==='494849')window.open('https://poki.com','_blank');else alert('Wrong code');}
     function closePoki(){document.getElementById('pokiModal').style.display='none';}
 
-    // --- Crossy Road endless game
+    // --- Crossy Road endless game with rivers and logs
     const canvas=document.getElementById('gameCanvas');
     const ctx=canvas.getContext('2d');
     const W=canvas.width,H=canvas.height;
     let offsetY=0;let score=0;const keys={};
     const player={x:W/2-10,y:0,w:20,h:20};
-    const lanes=[];const cars=[];
+    const lanes=[];const cars=[];const logs=[];
 
     function genLane(y){
       let type='road';
-      if(score%10===0) type='grass';
-      else if(Math.random()<0.1) type='river';
+      if(y/40<5) type='grass'; // initial safe zone = 5 lanes
+      else if(score%10===0) type='grass';
+      else if(Math.random()<0.08) type='river'; // random 10-20 lanes
       lanes.push({y,type});
     }
     for(let i=0;i<30;i++) genLane(i*40);
 
     function spawnCar(y){
       const dir=Math.random()>.5?1:-1;
-      cars.push({x:dir===1?-40:W+40,y,w:30,h:20,dir,speed:1+Math.random()*2});
+      cars.push({x:dir===1?-40:W+40,y,w:30,h:20,dir,speed:1+Math.random()*1.5});
+    }
+
+    function spawnLog(y){
+      const dir=Math.random()>.5?1:-1;
+      logs.push({x:dir===1?-100:W+100,y,w:100,h:20,dir,speed:0.5+Math.random()*1});
     }
 
     function loop(){
@@ -191,25 +197,37 @@
       for(const lane of lanes){
         ctx.fillStyle=lane.type==='road'?'#aaa':lane.type==='grass'?'#8f8':'#6cf';
         ctx.fillRect(0,lane.y,W,40);
-        if(lane.type==='road'&&Math.random()<0.02) spawnCar(lane.y+10);
+        if(lane.type==='road'&&Math.random()<0.01) spawnCar(lane.y+10);
+        if(lane.type==='river'&&Math.random()<0.02) spawnLog(lane.y+10);
       }
-      for(const c of cars){c.x+=c.dir*2;ctx.fillStyle='salmon';ctx.fillRect(c.x,c.y,c.w,c.h);}  
+      for(const c of cars){c.x+=c.dir*c.speed;ctx.fillStyle='salmon';ctx.fillRect(c.x,c.y,c.w,c.h);}  
+      for(const l of logs){l.x+=l.dir*l.speed;ctx.fillStyle='#964B00';ctx.fillRect(l.x,l.y,l.w,l.h);}  
       if(keys['ArrowUp']||keys['w']) player.y-=2;
       if(keys['ArrowDown']||keys['s']) player.y+=2;
       if(keys['ArrowLeft']||keys['a']) player.x-=2;
       if(keys['ArrowRight']||keys['d']) player.x+=2;
       ctx.fillStyle='blue';ctx.fillRect(player.x,player.y,player.w,player.h);
-      for(const c of cars){if(player.x<c.x+c.w&&player.x+player.w>c.x&&player.y<c.y+c.h&&player.y+player.h>c.y){score=0;player.x=W/2-10;player.y=0;cars.length=0;}}
+      // Collisions
+      for(const c of cars){if(player.x<c.x+c.w&&player.x+player.w>c.x&&player.y<c.y+c.h&&player.y+player.h>c.y){resetGame();}}
+      let onLog=false;
+      for(const l of logs){
+        if(player.x<l.x+l.w&&player.x+player.w>l.x&&player.y<l.y+l.h&&player.y+player.h>l.y){
+          onLog=true;player.x+=l.dir*l.speed;
+        }
+      }
+      const laneType=lanes.find(l=>Math.abs(l.y-player.y)<20)?.type;
+      if(laneType==='river'&&!onLog) resetGame();
       if(player.y/40>score){score=Math.floor(player.y/40);if(lanes[lanes.length-1].y<player.y+H)genLane(lanes[lanes.length-1].y+40);}  
       ctx.restore();
       ctx.fillStyle='black';ctx.fillText('Lanes: '+score,10,15);
       requestAnimationFrame(loop);
     }
+    function resetGame(){score=0;player.x=W/2-10;player.y=0;cars.length=0;logs.length=0;lanes.length=0;for(let i=0;i<30;i++) genLane(i*40);}
     loop();
 
     window.addEventListener('keydown',e=>keys[e.key]=true);
     window.addEventListener('keyup',e=>keys[e.key]=false);
-    function pressKey(k){if(k==='r'){score=0;player.x=W/2-10;player.y=0;cars.length=0;}keys[k]=true;setTimeout(()=>keys[k]=false,100);}
+    function pressKey(k){if(k==='r'){resetGame();}keys[k]=true;setTimeout(()=>keys[k]=false,100);}
   </script>
 </body>
 </html>
