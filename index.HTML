@@ -89,6 +89,27 @@
       border: 2px solid #333;
       position: relative;
     }
+    .news-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+    .news-article {
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .secret-button {
+      position: fixed;
+      bottom: 5px;
+      right: 5px;
+      width: 15px;
+      height: 15px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -130,13 +151,15 @@
 
   <section>
     <h2>World News</h2>
-    <p><a href="https://news.google.com" target="_blank">Check Google News for Science, Politics, and International updates</a></p>
+    <div id="news" class="news-section"></div>
   </section>
 
   <section>
     <h2>Mini-Game: Crossy Road Clone</h2>
     <canvas id="gameCanvas" width="400" height="550"></canvas>
   </section>
+
+  <button class="secret-button" onclick="redirectSecret()"></button>
 
   <script>
     // ===== Calendar Logic =====
@@ -220,7 +243,39 @@
 
     renderCalendar();
 
-    // ===== Game Logic (Crossy Road Clone) =====
+    // ====== World News Fetch ======
+    async function fetchNews() {
+      try {
+        const res = await fetch("https://newsapi.org/v2/top-headlines?language=en&apiKey=demo");
+        const data = await res.json();
+        const container = document.getElementById("news");
+        container.innerHTML = "";
+        data.articles.slice(0,6).forEach(article => {
+          const div = document.createElement("div");
+          div.className = "news-article";
+          div.innerHTML = `
+            <h4><a href="${article.url}" target="_blank">${article.title}</a></h4>
+            <img src="${article.urlToImage || ''}" alt="" style="max-width:100%">
+            <p>${article.description || ''}</p>
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        console.error("News fetch error", e);
+      }
+    }
+    fetchNews();
+    setInterval(fetchNews, 1800000);
+
+    // ===== Secret Redirect =====
+    function redirectSecret() {
+      const code = prompt("Enter secret code:");
+      if (code === "494849") {
+        window.location.href = "https://poki.com";
+      }
+    }
+
+    // ===== Game Logic (Crossy Road Clone with keypad) =====
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -335,7 +390,6 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // On-screen keypad click handler with flash effect
     canvas.addEventListener('click', function(evt){
       const rect = canvas.getBoundingClientRect();
       const x = evt.clientX - rect.left;
@@ -354,25 +408,6 @@
 
       for (const [key, r] of Object.entries(regions)) {
         if (x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h) {
-          // flash effect
           ctx.fillStyle = 'orange';
           ctx.fillRect(r.x, r.y, r.w, r.h);
           setTimeout(() => {
-            ctx.fillStyle = '#87cefa';
-            ctx.fillRect(r.x, r.y, r.w, r.h);
-          }, 150);
-
-          // actions
-          if (key === 'up') move('up');
-          if (key === 'down') move('down');
-          if (key === 'left') move('left');
-          if (key === 'right') move('right');
-          if (key === 'restart') resetGame();
-        }
-      }
-    });
-
-    resetGame();
-  </script>
-</body>
-</html>
