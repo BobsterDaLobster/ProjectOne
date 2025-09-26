@@ -246,17 +246,17 @@
     // ====== World News Fetch ======
     async function fetchNews() {
       try {
-        const res = await fetch("https://newsapi.org/v2/top-headlines?language=en&apiKey=demo");
+        const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en");
         const data = await res.json();
         const container = document.getElementById("news");
         container.innerHTML = "";
-        data.articles.slice(0,6).forEach(article => {
+        data.items.slice(0,6).forEach(article => {
           const div = document.createElement("div");
           div.className = "news-article";
           div.innerHTML = `
-            <h4><a href="${article.url}" target="_blank">${article.title}</a></h4>
-            <img src="${article.urlToImage || ''}" alt="" style="max-width:100%">
-            <p>${article.description || ''}</p>
+            <h4><a href="${article.link}" target="_blank">${article.title}</a></h4>
+            ${article.thumbnail ? `<img src="${article.thumbnail}" style="max-width:100%">` : ""}
+            <p>${article.description || ""}</p>
           `;
           container.appendChild(div);
         });
@@ -283,6 +283,10 @@
 
     function resetGame() {
       player = { x: 200, y: 520, size: 20 };
+      // snap player to lane grid
+      player.x = Math.floor(player.x / 20) * 20;
+      player.y = Math.floor(player.y / 20) * 20;
+
       lanes = [];
       offsetY = 0;
       score = 0;
@@ -315,6 +319,11 @@
       if (dir === 'down') player.y += 20;
       if (dir === 'left') player.x -= 20;
       if (dir === 'right') player.x += 20;
+
+      // snap to grid
+      player.x = Math.floor(player.x / 20) * 20;
+      player.y = Math.floor(player.y / 20) * 20;
+
       if (player.y < 200) {
         offsetY += 20;
         player.y += 20;
@@ -336,8 +345,8 @@
         } else if (lanes[i].type === 'road') {
           ctx.fillStyle = '#444';
           ctx.fillRect(0, laneY, 400, 20);
-          if (Math.random() < 0.014) {
-            lanes[i].cars.push({ x: Math.random()<0.5?-40:440, speed: (Math.random()*1+0.5)*(Math.random()<0.5?-1:1) });
+          if (Math.random() < 0.01) {
+            lanes[i].cars.push({ x: Math.random()<0.5?-40:440, speed: (Math.random()*0.5+0.3)*(Math.random()<0.5?-1:1) });
           }
           lanes[i].cars.forEach(car => {
             ctx.fillStyle = 'red';
@@ -348,8 +357,8 @@
         } else if (lanes[i].type === 'river') {
           ctx.fillStyle = '#00f';
           ctx.fillRect(0, laneY, 400, 20);
-          if (Math.random() < 0.04) {
-            lanes[i].logs.push({ x: Math.random()<0.5?-80:440, speed: (Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1) });
+          if (Math.random() < 0.03) {
+            lanes[i].logs.push({ x: Math.random()<0.5?-80:440, speed: (Math.random()*0.5+0.2)*(Math.random()<0.5?-1:1) });
           }
           let onLog = false;
           lanes[i].logs.forEach(log => {
@@ -370,7 +379,7 @@
       ctx.fillStyle = 'black';
       ctx.fillText('Score: '+score, 10, 20);
 
-      // Draw keypad inside canvas
+      // Draw keypad inside canvas (fixed size)
       const baseX = canvas.width - 170;
       const baseY = canvas.height - 120;
       const keys = [
@@ -390,6 +399,7 @@
       requestAnimationFrame(gameLoop);
     }
 
+    // Keypad handler with flash effect
     canvas.addEventListener('click', function(evt){
       const rect = canvas.getBoundingClientRect();
       const x = evt.clientX - rect.left;
@@ -399,23 +409,27 @@
       const baseY = canvas.height - 120;
 
       const regions = {
-        up:    {x: baseX+50, y: baseY, w:40, h:30},
-        left:  {x: baseX, y: baseY+40, w:40, h:30},
-        down:  {x: baseX+50, y: baseY+40, w:40, h:30},
-        right: {x: baseX+100, y: baseY+40, w:40, h:30},
-        restart:{x: baseX+50, y: baseY+80, w:40, h:30}
+        up:    {x: baseX+50, y: baseY, w:40, h:30, label:'⬆️'},
+        left:  {x: baseX, y: baseY+40, w:40, h:30, label:'⬅️'},
+        down:  {x: baseX+50, y: baseY+40, w:40, h:30, label:'⬇️'},
+        right: {x: baseX+100, y: baseY+40, w:40, h:30, label:'➡️'},
+        restart:{x: baseX+50, y: baseY+80, w:40, h:30, label:'🔄'}
       };
 
       for (const [key, r] of Object.entries(regions)) {
         if (x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h) {
-          ctx.fillStyle = 'orange';
+          // flash
+          ctx.fillStyle = '#ffd580';
           ctx.fillRect(r.x, r.y, r.w, r.h);
-          // --- completed setTimeout (was previously cut off) ---
+          ctx.fillStyle = 'white';
+          ctx.fillText(r.label, r.x+10, r.y+20);
           setTimeout(() => {
-            // let the game loop redraw the keypad next frame (no-op here)
+            ctx.fillStyle = '#87cefa';
+            ctx.fillRect(r.x, r.y, r.w, r.h);
+            ctx.fillStyle = 'white';
+            ctx.fillText(r.label, r.x+10, r.y+20);
           }, 150);
 
-          // actions
           if (key === 'up') move('up');
           if (key === 'down') move('down');
           if (key === 'left') move('left');
