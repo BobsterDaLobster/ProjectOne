@@ -370,7 +370,7 @@
       ctx.fillStyle = 'black';
       ctx.fillText('Score: '+score, 10, 20);
 
-      // Draw keypad inside canvas (fixed size)
+      // Draw keypad inside canvas
       const baseX = canvas.width - 170;
       const baseY = canvas.height - 120;
       const keys = [
@@ -390,6 +390,7 @@
       requestAnimationFrame(gameLoop);
     }
 
+    // ===== On-screen keypad click handler with flash effect =====
     canvas.addEventListener('click', function(evt){
       const rect = canvas.getBoundingClientRect();
       const x = evt.clientX - rect.left;
@@ -399,15 +400,38 @@
       const baseY = canvas.height - 120;
 
       const regions = {
-        up:    {x: baseX+50, y: baseY, w:40, h:30},
-        left:  {x: baseX, y: baseY+40, w:40, h:30},
-        down:  {x: baseX+50, y: baseY+40, w:40, h:30},
-        right: {x: baseX+100, y: baseY+40, w:40, h:30},
-        restart:{x: baseX+50, y: baseY+80, w:40, h:30}
+        up:    {x: baseX+50, y: baseY, w:40, h:30, label:'⬆️'},
+        left:  {x: baseX, y: baseY+40, w:40, h:30, label:'⬅️'},
+        down:  {x: baseX+50, y: baseY+40, w:40, h:30, label:'⬇️'},
+        right: {x: baseX+100, y: baseY+40, w:40, h:30, label:'➡️'},
+        restart:{x: baseX+50, y: baseY+80, w:40, h:30, label:'🔄'}
       };
 
       for (const [key, r] of Object.entries(regions)) {
         if (x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h) {
-          ctx.fillStyle = 'orange';
+          // flash effect
+          ctx.fillStyle = '#ffd580'; // light orange
           ctx.fillRect(r.x, r.y, r.w, r.h);
+          ctx.fillStyle = 'white';
+          ctx.fillText(r.label, r.x+10, r.y+20);
           setTimeout(() => {
+            ctx.fillStyle = '#87cefa'; // baby blue
+            ctx.fillRect(r.x, r.y, r.w, r.h);
+            ctx.fillStyle = 'white';
+            ctx.fillText(r.label, r.x+10, r.y+20);
+          }, 150);
+
+          // actions
+          if (key === 'up') move('up');
+          if (key === 'down') move('down');
+          if (key === 'left') move('left');
+          if (key === 'right') move('right');
+          if (key === 'restart') resetGame();
+        }
+      }
+    });
+
+    resetGame();
+  </script>
+</body>
+</html>
