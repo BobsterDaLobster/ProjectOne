@@ -1,335 +1,236 @@
-import React, { useState, useEffect, useRef } from 'react'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Personal Profile</title>
+  <style>
+    body { font-family: sans-serif; margin:0; background: linear-gradient(#bfefff, #eaf7ff); }
+    header, footer { background:#ffd9a6; padding:10px; }
+    h1, h2 { margin:0; }
+    .container { max-width:1000px; margin:20px auto; padding:20px; background:white; border-radius:15px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+    textarea, input { width:100%; padding:5px; margin:5px 0; }
+    button { background:#ffd9a6; border:none; padding:5px 10px; cursor:pointer; border-radius:5px; }
+    button:hover { background:#ffbd70; }
+    section { margin-top:20px; padding:10px; border:2px solid #ffd9a6; border-radius:10px; }
+    .flex { display:flex; gap:10px; flex-wrap:wrap; }
+    ul { padding-left:20px; }
+    canvas { border:3px solid #ffd9a6; margin-top:10px; }
+    #hiddenDot { position:fixed; bottom:10px; right:10px; width:15px; height:15px; background:#ffbd70; border-radius:50%; cursor:pointer; }
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; }
+    .modal-content { background:white; padding:20px; border-radius:10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 contenteditable="true">Your Name</h1>
+    <div contenteditable="true">Your Title</div>
+    <nav>
+      <a href="https://apple.news" target="_blank">Apple News</a> |
+      <a href="https://espn.com" target="_blank">ESPN</a> |
+      <a href="https://youtube.com" target="_blank">YouTube</a>
+    </nav>
+  </header>
 
-// PersonalProfileSite - Single-file React app
-// Built for preview/editing. Drop into a create-react-app / Vite project or preview in canvas.
-// Uses Tailwind-style class names (you can replace with your own CSS). Color scheme: baby-blue + light-orange.
+  <div class="container">
+    <section>
+      <h2>About Me</h2>
+      <p contenteditable="true">This is your bio. Edit me!</p>
+    </section>
 
-export default function App(){
-  // Theme colors
-  const babyBlue = '#BFEFFF'
-  const lightOrange = '#FFD9A6'
+    <section>
+      <h2>Resume</h2>
+      <textarea id="resume"></textarea>
+    </section>
 
-  // Profile
-  const [profile, setProfile] = useState(()=>{
-    const raw = localStorage.getItem('profile');
-    return raw ? JSON.parse(raw) : {name:'Your Name', title:'Software Engineer', bio:'Edit this bio. Everything is editable.'}
-  })
-
-  useEffect(()=>{ localStorage.setItem('profile', JSON.stringify(profile)) },[profile])
-
-  // Resume (simple text area saved)
-  const [resume, setResume] = useState(()=>localStorage.getItem('resume')||'Paste or type your resume here...')
-  useEffect(()=>{ localStorage.setItem('resume', resume) },[resume])
-
-  // Friends
-  const [friends, setFriends] = useState(()=>{
-    const raw = localStorage.getItem('friends');
-    return raw ? JSON.parse(raw) : []
-  })
-  const addFriend = (name) => { if(!name) return; const n=[...friends,{id:Date.now(),name}]; setFriends(n); localStorage.setItem('friends', JSON.stringify(n)); }
-  const removeFriend = (id)=>{ const n=friends.filter(f=>f.id!==id); setFriends(n); localStorage.setItem('friends', JSON.stringify(n)); }
-
-  // Schedule (very simple)
-  const [events, setEvents] = useState(()=>{
-    const raw = localStorage.getItem('events');
-    return raw ? JSON.parse(raw) : []
-  })
-  const addEvent = (ev)=>{ const n=[...events, {...ev,id:Date.now()}]; setEvents(n); localStorage.setItem('events', JSON.stringify(n)); }
-  const removeEvent = (id)=>{ const n=events.filter(e=>e.id!==id); setEvents(n); localStorage.setItem('events', JSON.stringify(n)); }
-
-  // AI Chat stub (user provides key and endpoint)
-  const [openAiKey, setOpenAiKey] = useState('')
-  const [aiMessages, setAiMessages] = useState([])
-  const [aiInput, setAiInput] = useState('')
-  const sendAi = async ()=>{
-    if(!aiInput) return; // This function expects user to wire up an API endpoint.
-    setAiMessages(m=>[...m, {role:'user', text:aiInput}])
-    const userPrompt = aiInput
-    setAiInput('')
-    // NOTE: For security and to avoid exposing your key client-side, set up a small serverless function
-    // (e.g. GitHub Actions / Netlify / Vercel) that proxies requests to OpenAI. Below is a placeholder fetch.
-    try{
-      const resp = await fetch('/.netlify/functions/proxy_openai',{ // placeholder - implement server-side
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({key:openAiKey, prompt:userPrompt})
-      })
-      const data = await resp.json()
-      const text = data.reply || data.choices?.[0]?.text || JSON.stringify(data)
-      setAiMessages(m=>[...m, {role:'assistant', text}])
-    }catch(e){ setAiMessages(m=>[...m, {role:'assistant', text:'(error contacting AI - configure server proxy)'}]) }
-  }
-
-  // Sports & News - UI + fetcher stubs
-  // IMPORTANT: ESPN does not offer a simple public JSON API for all content. You should register with a sports data provider
-  // (SportsDataIO, RapidAPI, or build a small server-side scraper/proxy). Below we include UI and fetch code placeholders.
-  const [sportsQuery, setSportsQuery] = useState('Notre Dame')
-  const [sportsData, setSportsData] = useState(null)
-  const fetchSports = async (league)=>{
-    // league = 'nba' | 'nfl' | 'college' etc. This is a stub illustrating where you'd call your server API.
-    try{
-      const res = await fetch(`/api/sports?league=${league}&q=${encodeURIComponent(sportsQuery)}`)
-      const j = await res.json()
-      setSportsData(j)
-    }catch(e){ setSportsData({error:'set up a server / use a sports API and route here'}) }
-  }
-
-  // Hidden poki code
-  const [showPokiModal, setShowPokiModal] = useState(false)
-  const [pokiCode, setPokiCode] = useState('')
-  const tryPoki = ()=>{
-    if(pokiCode.trim() === '494849') window.open('https://poki.com','_blank')
-    else alert('Wrong code')
-  }
-
-  // Crossy-road like mini-game (canvas)
-  return (
-    <div style={{minHeight:'100vh', background:`linear-gradient(180deg, ${babyBlue} 0%, #EAF7FF 60%)`}} className="p-6 font-sans">
-      <div className="max-w-5xl mx-auto bg-white/80 rounded-2xl shadow-lg p-6" style={{border:`4px solid ${lightOrange}`}}>
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 contentEditable suppressContentEditableWarning onBlur={(e)=>setProfile(p=>({...p,name:e.target.innerText}))} className="text-3xl font-bold">{profile.name}</h1>
-            <div contentEditable suppressContentEditableWarning onBlur={(e)=>setProfile(p=>({...p,title:e.target.innerText}))} className="text-sm text-slate-700">{profile.title}</div>
-          </div>
-          <div className="flex gap-2">
-            <a className="px-3 py-1 rounded-md" href="https://apple.news" target="_blank" rel="noreferrer">Apple News</a>
-            <a className="px-3 py-1 rounded-md" href="https://espn.com" target="_blank" rel="noreferrer">ESPN</a>
-            <a className="px-3 py-1 rounded-md" href="https://youtube.com" target="_blank" rel="noreferrer">YouTube</a>
-          </div>
-        </header>
-
-        <main className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <section className="col-span-1 p-3 bg-white rounded-xl shadow-inner">
-            <h2 className="font-semibold">About</h2>
-            <p contentEditable suppressContentEditableWarning onBlur={(e)=>setProfile(p=>({...p,bio:e.target.innerText}))} className="mt-2 text-sm">{profile.bio}</p>
-
-            <h3 className="mt-4">Resume</h3>
-            <textarea className="w-full h-32 mt-2 p-2 border rounded" value={resume} onChange={(e)=>setResume(e.target.value)} />
-
-            <h3 className="mt-4">Friends</h3>
-            <div className="flex gap-2">
-              <input id="finput" placeholder="Friend name" className="p-1 border rounded" />
-              <button className="px-2 py-1" onClick={()=>{ const v=(document.getElementById('finput')||{}).value; addFriend(v); if(document.getElementById('finput')) document.getElementById('finput').value=''}}>Add</button>
-            </div>
-            <ul className="mt-2 text-sm">
-              {friends.map(f=> <li key={f.id} className="flex justify-between"><span>{f.name}</span><button onClick={()=>removeFriend(f.id)}>x</button></li>)}
-            </ul>
-
-            <h3 className="mt-4">AI Chat (requires configuration)</h3>
-            <input placeholder="Server proxy key or leave blank" value={openAiKey} onChange={(e)=>setOpenAiKey(e.target.value)} className="w-full p-1 border rounded" />
-            <div className="mt-2">
-              <div className="h-24 overflow-auto border p-2 rounded bg-slate-50">
-                {aiMessages.map((m,i)=>(<div key={i}><strong>{m.role}</strong>: {m.text}</div>))}
-              </div>
-              <div className="flex gap-2 mt-2">
-                <input value={aiInput} onChange={(e)=>setAiInput(e.target.value)} className="flex-1 p-1 border rounded" placeholder="Ask the site AI... (requires server)" />
-                <button onClick={sendAi} className="px-3">Send</button>
-              </div>
-            </div>
-          </section>
-
-          <section className="col-span-2 p-3 bg-white rounded-xl">
-            <h2 className="font-semibold">Dashboard</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="p-3 border rounded">
-                <h4 className="font-medium">Schedule</h4>
-                <div className="mt-2">
-                  <EventAdder onAdd={(ev)=>addEvent(ev)} />
-                  <ul className="mt-2">
-                    {events.map(ev=> <li key={ev.id} className="flex justify-between"><div><strong>{ev.title}</strong> — {ev.date} {ev.time}</div><button onClick={()=>removeEvent(ev.id)}>x</button></li>)}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="p-3 border rounded">
-                <h4 className="font-medium">Sports & Highlights</h4>
-                <div className="mt-2">
-                  <div className="flex gap-2">
-                    <button onClick={()=>fetchSports('nfl')} className="px-2 py-1 rounded">NFL (ESPN)</button>
-                    <button onClick={()=>fetchSports('nba')} className="px-2 py-1 rounded">NBA (ESPN)</button>
-                    <button onClick={()=>fetchSports('college')} className="px-2 py-1 rounded">College</button>
-                  </div>
-                  <div className="mt-2 text-sm">
-                    <pre style={{whiteSpace:'pre-wrap'}}>{sportsData ? JSON.stringify(sportsData,null,2) : 'No sports data loaded. Configure a server-side sports API that queries ESPN or SportsData provider and routes to /api/sports.'}</pre>
-                  </div>
-                  <div className="mt-2">
-                    <label className="text-xs">You can paste a YouTube highlights link to store:</label>
-                    <HighlightSaver />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <div className="mt-6 p-3 border rounded bg-white">
-              <h3>Notre Dame Fighting Irish</h3>
-              <p className="text-sm">A dedicated section for Notre Dame football. Make this editable. You can load team stats the same way as other sports (server-side proxy to ESPN).</p>
-              <div contentEditable suppressContentEditableWarning className="mt-2 p-2 border rounded">Write notes about Notre Dame games, roster, or paste box scores here.</div>
-            </div>
-
-            <div className="mt-6 p-3 border rounded bg-white">
-              <h3>World News</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
-                <div>
-                  <strong>Science</strong>
-                  <p className="text-xs">Configure an RSS / News API to pull science headlines.</p>
-                </div>
-                <div>
-                  <strong>National Politics</strong>
-                  <p className="text-xs">Configure a news source or RSS here.</p>
-                </div>
-                <div>
-                  <strong>International Politics</strong>
-                  <p className="text-xs">Add feeds for international coverage.</p>
-                </div>
-                <div>
-                  <strong>Sports</strong>
-                  <p className="text-xs">Sports headlines and quick links.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 p-3 border rounded bg-white">
-              <h3>Mini-Game: Crossy-Road style</h3>
-              <p className="text-sm">Use arrow keys or WASD to move — try to cross the lanes without getting hit.</p>
-              <CrossyGame />
-            </div>
-
-            <div className="mt-4 text-xs opacity-70">Hidden corner — click the orange dot in the bottom-right to enter a code.</div>
-
-          </section>
-
-        </main>
-
-        <footer className="mt-6 flex justify-between items-center">
-          <div className="text-sm">Made with ❤️ — editable site. Color scheme: baby-blue + light-orange.</div>
-          <div>
-            <button onClick={()=>setShowPokiModal(true)} className="px-3 py-1 rounded-full" style={{background:lightOrange}}>🔒</button>
-          </div>
-        </footer>
-
+    <section>
+      <h2>Friends</h2>
+      <div class="flex">
+        <input id="friendInput" placeholder="Friend name" />
+        <button onclick="addFriend()">Add</button>
       </div>
+      <ul id="friendsList"></ul>
+    </section>
 
-      {showPokiModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-4 rounded shadow">
-            <h4>Enter secret code</h4>
-            <input value={pokiCode} onChange={(e)=>setPokiCode(e.target.value)} className="p-1 border rounded mt-2" />
-            <div className="flex gap-2 mt-2">
-              <button onClick={tryPoki}>Try</button>
-              <button onClick={()=>setShowPokiModal(false)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ===== Helper components =====
-function EventAdder({onAdd}){
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
-  return (
-    <div className="flex gap-2">
-      <input placeholder="Title" value={title} onChange={(e)=>setTitle(e.target.value)} className="p-1 border rounded" />
-      <input type="date" value={date} onChange={(e)=>setDate(e.target.value)} className="p-1 border rounded" />
-      <input type="time" value={time} onChange={(e)=>setTime(e.target.value)} className="p-1 border rounded" />
-      <button onClick={()=>{ if(!title||!date) return alert('add title/date'); onAdd({title,date,time}); setTitle(''); setDate(''); setTime('')}}>Add</button>
-    </div>
-  )
-}
-
-function HighlightSaver(){
-  const [link, setLink] = useState('')
-  const [list, setList] = useState(()=> JSON.parse(localStorage.getItem('highlights')||'[]'))
-  useEffect(()=> localStorage.setItem('highlights', JSON.stringify(list)),[list])
-  return (
-    <div>
-      <div className="flex gap-2">
-        <input placeholder="YouTube highlights link" value={link} onChange={(e)=>setLink(e.target.value)} className="p-1 border rounded flex-1" />
-        <button onClick={()=>{ if(!link) return; setList(l=>[{id:Date.now(),link},...l]); setLink('')}}>Save</button>
+    <section>
+      <h2>Schedule</h2>
+      <div class="flex">
+        <input id="eventTitle" placeholder="Title" />
+        <input id="eventDate" type="date" />
+        <input id="eventTime" type="time" />
+        <button onclick="addEvent()">Add</button>
       </div>
-      <ul className="mt-2 text-xs">
-        {list.map(h=> <li key={h.id}><a href={h.link} target="_blank" rel="noreferrer">{h.link}</a></li>)}
-      </ul>
-    </div>
-  )
-}
+      <ul id="eventsList"></ul>
+    </section>
 
-// Simple crossy-road style game (canvas)
-function CrossyGame(){
-  const canvasRef = useRef(null)
-  useEffect(()=>{
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    const W = 500, H = 300
-    canvas.width = W; canvas.height = H
-    let running = true
-    let score = 0
-    const player = {x: W/2-10, y: H-30, w:20, h:20}
-    const lanes = [60,120,180,240]
-    const cars = []
-    const keys = {}
-    function spawnCar(){
-      const lane = lanes[Math.floor(Math.random()*lanes.length)]
-      const dir = Math.random()>.5 ? 1 : -1
-      const speed = 1+Math.random()*2
-      const x = dir===1 ? -40 : W+40
-      cars.push({x,y:lane,w:30,h:20,dir,speed})
+    <section>
+      <h2>Sports & Highlights</h2>
+      <p>Edit this section with recent NFL/NBA/College notes (needs server for live ESPN stats).</p>
+      <input id="highlightInput" placeholder="YouTube highlight link" />
+      <button onclick="saveHighlight()">Save</button>
+      <ul id="highlightList"></ul>
+    </section>
+
+    <section>
+      <h2>Notre Dame Fighting Irish</h2>
+      <div contenteditable="true">Notes about Notre Dame football here!</div>
+    </section>
+
+    <section>
+      <h2>World News</h2>
+      <div class="flex">
+        <div><strong>Science</strong><p contenteditable="true">Add science news here.</p></div>
+        <div><strong>National Politics</strong><p contenteditable="true">Add national politics news here.</p></div>
+        <div><strong>International Politics</strong><p contenteditable="true">Add international news here.</p></div>
+        <div><strong>Sports</strong><p contenteditable="true">Add sports news here.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Mini‑Game: Crossy Road</h2>
+      <p>Use arrow keys/WASD to move. R to restart.</p>
+      <canvas id="gameCanvas" width="500" height="300"></canvas>
+    </section>
+  </div>
+
+  <footer>
+    <p>Made with ❤️ — Color scheme: baby blue + light orange</p>
+  </footer>
+
+  <div id="hiddenDot"></div>
+  <div id="pokiModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Enter secret code</h3>
+      <input id="pokiCode" />
+      <button onclick="tryPoki()">Go</button>
+      <button onclick="closePoki()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Resume persistence
+    const resumeEl = document.getElementById('resume');
+    resumeEl.value = localStorage.getItem('resume') || '';
+    resumeEl.addEventListener('input',()=> localStorage.setItem('resume',resumeEl.value));
+
+    // --- Friends
+    const friendsList = document.getElementById('friendsList');
+    let friends = JSON.parse(localStorage.getItem('friends')||'[]');
+    function renderFriends(){
+      friendsList.innerHTML = friends.map(f=>`<li>${f.name} <button onclick=\"removeFriend(${f.id})\">x</button></li>`).join('');
     }
-    let frame=0
+    function addFriend(){
+      const name=document.getElementById('friendInput').value;
+      if(!name) return;
+      friends.push({id:Date.now(), name});
+      localStorage.setItem('friends', JSON.stringify(friends));
+      document.getElementById('friendInput').value='';
+      renderFriends();
+    }
+    function removeFriend(id){
+      friends=friends.filter(f=>f.id!==id);
+      localStorage.setItem('friends', JSON.stringify(friends));
+      renderFriends();
+    }
+    renderFriends();
+
+    // --- Events
+    const eventsList=document.getElementById('eventsList');
+    let events=JSON.parse(localStorage.getItem('events')||'[]');
+    function renderEvents(){
+      eventsList.innerHTML = events.map(e=>`<li>${e.title} (${e.date} ${e.time}) <button onclick=\"removeEvent(${e.id})\">x</button></li>`).join('');
+    }
+    function addEvent(){
+      const title=document.getElementById('eventTitle').value;
+      const date=document.getElementById('eventDate').value;
+      const time=document.getElementById('eventTime').value;
+      if(!title||!date) return;
+      events.push({id:Date.now(), title,date,time});
+      localStorage.setItem('events', JSON.stringify(events));
+      document.getElementById('eventTitle').value='';
+      document.getElementById('eventDate').value='';
+      document.getElementById('eventTime').value='';
+      renderEvents();
+    }
+    function removeEvent(id){
+      events=events.filter(e=>e.id!==id);
+      localStorage.setItem('events', JSON.stringify(events));
+      renderEvents();
+    }
+    renderEvents();
+
+    // --- Highlights
+    const highlightList=document.getElementById('highlightList');
+    let highlights=JSON.parse(localStorage.getItem('highlights')||'[]');
+    function renderHighlights(){
+      highlightList.innerHTML = highlights.map(h=>`<li><a href=\"${h.link}\" target=\"_blank\">${h.link}</a></li>`).join('');
+    }
+    function saveHighlight(){
+      const link=document.getElementById('highlightInput').value;
+      if(!link) return;
+      highlights.unshift({id:Date.now(), link});
+      localStorage.setItem('highlights', JSON.stringify(highlights));
+      document.getElementById('highlightInput').value='';
+      renderHighlights();
+    }
+    renderHighlights();
+
+    // --- Hidden Poki link
+    document.getElementById('hiddenDot').onclick=()=>{
+      document.getElementById('pokiModal').style.display='flex';
+    }
+    function tryPoki(){
+      const code=document.getElementById('pokiCode').value.trim();
+      if(code==='494849') window.open('https://poki.com','_blank');
+      else alert('Wrong code');
+    }
+    function closePoki(){ document.getElementById('pokiModal').style.display='none'; }
+
+    // --- Mini-game (Crossy Road)
+    const canvas=document.getElementById('gameCanvas');
+    const ctx=canvas.getContext('2d');
+    const W=canvas.width, H=canvas.height;
+    let running=true, score=0;
+    const player={x:W/2-10,y:H-30,w:20,h:20};
+    const lanes=[60,120,180,240];
+    const cars=[]; const keys={};
+    function spawnCar(){
+      const lane=lanes[Math.floor(Math.random()*lanes.length)];
+      const dir=Math.random()>.5?1:-1;
+      const speed=1+Math.random()*2;
+      const x=dir===1?-40:W+40;
+      cars.push({x,y:lane,w:30,h:20,dir,speed});
+    }
     function loop(){
-      if(!running) return
-      frame++
-      ctx.clearRect(0,0,W,H)
-      // draw river/lanes
-      ctx.fillStyle = '#e6f7ff'
-      ctx.fillRect(0,0,W,H)
-      // draw goal
-      ctx.fillStyle='rgba(255, 223, 170,0.6)'
-      ctx.fillRect(0,0,W,40)
-      // cars
-      if(Math.random()<0.03) spawnCar()
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle='#e6f7ff'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='rgba(255,223,170,0.6)'; ctx.fillRect(0,0,W,40);
+      if(Math.random()<0.03) spawnCar();
       for(const c of cars){
-        c.x += c.speed * c.dir * 2
-        ctx.fillStyle='salmon'
-        ctx.fillRect(c.x,c.y,c.w,c.h)
+        c.x+=c.speed*c.dir*2;
+        ctx.fillStyle='salmon'; ctx.fillRect(c.x,c.y,c.w,c.h);
       }
-      // player input
-      if(keys['ArrowUp']||keys['w']) player.y -= 4
-      if(keys['ArrowDown']||keys['s']) player.y += 4
-      if(keys['ArrowLeft']||keys['a']) player.x -= 4
-      if(keys['ArrowRight']||keys['d']) player.x += 4
-      player.x = Math.max(0, Math.min(W-player.w, player.x))
-      player.y = Math.max(0, Math.min(H-player.h, player.y))
-      // draw player
-      ctx.fillStyle='blue'
-      ctx.fillRect(player.x, player.y, player.w, player.h)
-      // collisions
+      if(keys['ArrowUp']||keys['w']) player.y-=4;
+      if(keys['ArrowDown']||keys['s']) player.y+=4;
+      if(keys['ArrowLeft']||keys['a']) player.x-=4;
+      if(keys['ArrowRight']||keys['d']) player.x+=4;
+      player.x=Math.max(0,Math.min(W-player.w,player.x));
+      player.y=Math.max(0,Math.min(H-player.h,player.y));
+      ctx.fillStyle='blue'; ctx.fillRect(player.x,player.y,player.w,player.h);
       for(const c of cars){
-        if(player.x < c.x+c.w && player.x+player.w > c.x && player.y < c.y+c.h && player.y+player.h > c.y){
-          // hit
-          running=false
-          ctx.fillStyle='rgba(0,0,0,0.6)'
-          ctx.fillRect(0,0,W,H)
-          ctx.fillStyle='white'
-          ctx.font='20px serif'
-          ctx.fillText('Game Over — press R to restart',50,H/2)
+        if(player.x<c.x+c.w && player.x+player.w>c.x && player.y<c.y+c.h && player.y+player.h>c.y){
+          running=false;
+          ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,W,H);
+          ctx.fillStyle='white'; ctx.fillText('Game Over — press R to restart',50,H/2);
         }
       }
-      // goal reached
-      if(player.y < 40){ score++; player.x=W/2-10; player.y=H-30 }
-      ctx.fillStyle='black'
-      ctx.fillText('Score: '+score,10,15)
-      requestAnimationFrame(loop)
+      if(player.y<40){score++; player.x=W/2-10; player.y=H-30;}
+      ctx.fillStyle='black'; ctx.fillText('Score: '+score,10,15);
+      if(running) requestAnimationFrame(loop);
     }
-    loop()
-    function down(e){ keys[e.key]=true }
-    function up(e){ keys[e.key]=false; if(e.key==='r'){ running=true; score=0; player.x=W/2-10; player.y=H-30 }}
-    window.addEventListener('keydown',down); window.addEventListener('keyup',up)
-    return ()=>{ window.removeEventListener('keydown',down); window.removeEventListener('keyup',up); running=false }
-  },[])
-  return <canvas ref={canvasRef} style={{border:`3px solid ${'#FFD9A6'}`, display:'block', marginTop:10}} />
-}
-
+    loop();
+    window.addEventListener('keydown',e=>{keys[e.key]=true; if(e.key==='r'){running=true; score=0; player.x=W/2-10; player.y=H-30; loop();}});
+    window.addEventListener('keyup',e=>keys[e.key]=false);
+  </script>
+</body>
+</html>
