@@ -87,23 +87,7 @@
       display: block;
       margin: 0 auto;
       border: 2px solid #333;
-    }
-    .keypad {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
-      display: grid;
-      grid-template-columns: repeat(3, 50px);
-      grid-gap: 5px;
-    }
-    .keypad button {
-      padding: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-      background: #87cefa;
-      color: white;
-      cursor: pointer;
+      position: relative;
     }
   </style>
 </head>
@@ -151,14 +135,7 @@
 
   <section>
     <h2>Mini-Game: Crossy Road Clone</h2>
-    <canvas id="gameCanvas" width="400" height="500"></canvas>
-    <div class="keypad">
-      <button onclick="move('up')">⬆️</button>
-      <button onclick="move('left')">⬅️</button>
-      <button onclick="move('down')">⬇️</button>
-      <button onclick="move('right')">➡️</button>
-      <button onclick="resetGame()">🔄</button>
-    </div>
+    <canvas id="gameCanvas" width="400" height="550"></canvas>
   </section>
 
   <script>
@@ -243,14 +220,14 @@
 
     renderCalendar();
 
-    // ===== Game Logic (Simplified Crossy Road Clone) =====
+    // ===== Game Logic (Crossy Road Clone) =====
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
     let player, lanes, offsetY, score;
 
     function resetGame() {
-      player = { x: 200, y: 480, size: 20 };
+      player = { x: 200, y: 520, size: 20 };
       lanes = [];
       offsetY = 0;
       score = 0;
@@ -295,8 +272,8 @@
       ctx.clearRect(0,0,canvas.width,canvas.height);
 
       for (let i = 0; i < lanes.length; i++) {
-        const laneY = 500 - (i*20) + offsetY;
-        if (laneY < -20 || laneY > 520) continue;
+        const laneY = 550 - (i*20) + offsetY;
+        if (laneY < -20 || laneY > 570) continue;
 
         if (lanes[i].type === 'grass') {
           ctx.fillStyle = '#7cfc00';
@@ -304,7 +281,7 @@
         } else if (lanes[i].type === 'road') {
           ctx.fillStyle = '#444';
           ctx.fillRect(0, laneY, 400, 20);
-          if (Math.random() < 0.02) {
+          if (Math.random() < 0.014) { // 30% fewer cars
             lanes[i].cars.push({ x: Math.random()<0.5?-40:440, speed: (Math.random()*2+1)*(Math.random()<0.5?-1:1) });
           }
           lanes[i].cars.forEach(car => {
@@ -316,7 +293,7 @@
         } else if (lanes[i].type === 'river') {
           ctx.fillStyle = '#00f';
           ctx.fillRect(0, laneY, 400, 20);
-          if (Math.random() < 0.05) {
+          if (Math.random() < 0.04) { // 20% fewer logs
             lanes[i].logs.push({ x: Math.random()<0.5?-80:440, speed: (Math.random()*1.5+0.5)*(Math.random()<0.5?-1:1) });
           }
           let onLog = false;
@@ -338,8 +315,39 @@
       ctx.fillStyle = 'black';
       ctx.fillText('Score: '+score, 10, 20);
 
+      // Draw keypad inside canvas (fixed size)
+      const baseX = canvas.width - 170;
+      const baseY = canvas.height - 120;
+      const keys = [
+        {label:'⬆️', x: baseX+50, y: baseY},
+        {label:'⬅️', x: baseX, y: baseY+40},
+        {label:'⬇️', x: baseX+50, y: baseY+40},
+        {label:'➡️', x: baseX+100, y: baseY+40},
+        {label:'🔄', x: baseX+50, y: baseY+80}
+      ];
+      ctx.fillStyle = '#87cefa';
+      keys.forEach(k => {
+        ctx.fillRect(k.x, k.y, 40, 30);
+        ctx.fillStyle = 'white';
+        ctx.fillText(k.label, k.x+10, k.y+20);
+        ctx.fillStyle = '#87cefa';
+      });
+
       requestAnimationFrame(gameLoop);
     }
+
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const baseX = canvas.width - 170;
+      const baseY = canvas.height - 120;
+      if (x>baseX+50 && x<baseX+90 && y>baseY && y<baseY+30) move('up');
+      if (x>baseX && x<baseX+40 && y>baseY+40 && y<baseY+70) move('left');
+      if (x>baseX+50 && x<baseX+90 && y>baseY+40 && y<baseY+70) move('down');
+      if (x>baseX+100 && x<baseX+140 && y>baseY+40 && y<baseY+70) move('right');
+      if (x>baseX+50 && x<baseX+90 && y>baseY+80 && y<baseY+110) resetGame();
+    });
 
     resetGame();
   </script>
