@@ -1,236 +1,588 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Personal Profile</title>
-  <style>
-    body { font-family: sans-serif; margin:0; background: linear-gradient(#bfefff, #eaf7ff); }
-    header, footer { background:#ffd9a6; padding:10px; }
-    h1, h2 { margin:0; }
-    .container { max-width:1000px; margin:20px auto; padding:20px; background:white; border-radius:15px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-    textarea, input { width:100%; padding:5px; margin:5px 0; }
-    button { background:#ffd9a6; border:none; padding:5px 10px; cursor:pointer; border-radius:5px; }
-    button:hover { background:#ffbd70; }
-    section { margin-top:20px; padding:10px; border:2px solid #ffd9a6; border-radius:10px; }
-    .flex { display:flex; gap:10px; flex-wrap:wrap; }
-    ul { padding-left:20px; }
-    canvas { border:3px solid #ffd9a6; margin-top:10px; }
-    #hiddenDot { position:fixed; bottom:10px; right:10px; width:15px; height:15px; background:#ffbd70; border-radius:50%; cursor:pointer; }
-    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; }
-    .modal-content { background:white; padding:20px; border-radius:10px; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Personal Profile — Calendar, News, Crossy Game</title>
+<style>
+  :root{
+    --baby-blue:#BFEFFF;
+    --baby-blue-2:#EAF7FF;
+    --light-orange:#FFD9A6;
+    --accent:#FFBD70;
+    --card-bg: #ffffffcc;
+    --muted:#6b7280;
+    --radius:14px;
+  }
+  html,body{height:100%; margin:0; font-family:Inter,-apple-system,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial; background:linear-gradient(180deg,var(--baby-blue),var(--baby-blue-2)); color:#0f172a}
+  header{background:var(--light-orange); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+  header .left{display:flex; gap:12px; align-items:center}
+  h1{margin:0;font-size:20px}
+  .container{max-width:1100px;margin:22px auto;padding:18px;background:var(--card-bg); border-radius:var(--radius); box-shadow:0 10px 30px rgba(2,6,23,.08); border:3px solid var(--light-orange)}
+  .row{display:flex; gap:16px; flex-wrap:wrap}
+  .col{flex:1; min-width:280px}
+  section{background:white;border-radius:10px;padding:12px; box-shadow:0 4px 12px rgba(2,6,23,.04)}
+  label{font-size:13px;color:var(--muted)}
+  button{background:var(--light-orange); border:none; padding:8px 10px; border-radius:8px; cursor:pointer; transition:transform .12s}
+  button:hover{transform:translateY(-2px)}
+  .muted{color:var(--muted); font-size:13px}
+  /* Calendar */
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr); gap:6px}
+  .day-cell{min-height:80px;border-radius:8px;padding:6px;background:#f8fafc;position:relative;overflow:hidden}
+  .day-num{font-weight:600;font-size:13px}
+  .day-today{box-shadow:inset 0 0 0 2px var(--accent); border-radius:8px}
+  .events-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:6px}
+  .small{font-size:12px;color:var(--muted)}
+  /* News list */
+  .news-item{display:flex;gap:10px;padding:8px;border-radius:8px;align-items:flex-start}
+  .news-item img{width:92px;height:60px;object-fit:cover;border-radius:6px}
+  .news-item a{font-weight:600;color:#0f172a;text-decoration:none}
+  .news-item p{margin:4px 0;color:var(--muted);font-size:13px}
+  /* Game */
+  .game-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+  canvas{border-radius:8px;border:3px solid var(--light-orange); background:linear-gradient(#e6f7ff,#dff6ff)}
+  .keypad{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;justify-content:center}
+  .key{background:linear-gradient(#fff,#ffe);border:1px solid #f0d6b0;padding:10px 12px;border-radius:8px;cursor:pointer;box-shadow:0 6px 12px rgba(0,0,0,0.06)}
+  /* modal */
+  .modal {position:fixed;inset:0;background:rgba(2,6,23,0.45);display:flex;align-items:center;justify-content:center;z-index:40}
+  .modal-card{background:white;padding:18px;border-radius:10px;max-width:520px;width:94%}
+  .flex-between{display:flex;justify-content:space-between;align-items:center}
+  @media (max-width:720px){ .day-cell{min-height:72px} canvas{width:100%;height:280px} }
+</style>
 </head>
 <body>
-  <header>
-    <h1 contenteditable="true">Your Name</h1>
-    <div contenteditable="true">Your Title</div>
-    <nav>
-      <a href="https://apple.news" target="_blank">Apple News</a> |
-      <a href="https://espn.com" target="_blank">ESPN</a> |
-      <a href="https://youtube.com" target="_blank">YouTube</a>
-    </nav>
-  </header>
-
-  <div class="container">
-    <section>
-      <h2>About Me</h2>
-      <p contenteditable="true">This is your bio. Edit me!</p>
-    </section>
-
-    <section>
-      <h2>Resume</h2>
-      <textarea id="resume"></textarea>
-    </section>
-
-    <section>
-      <h2>Friends</h2>
-      <div class="flex">
-        <input id="friendInput" placeholder="Friend name" />
-        <button onclick="addFriend()">Add</button>
-      </div>
-      <ul id="friendsList"></ul>
-    </section>
-
-    <section>
-      <h2>Schedule</h2>
-      <div class="flex">
-        <input id="eventTitle" placeholder="Title" />
-        <input id="eventDate" type="date" />
-        <input id="eventTime" type="time" />
-        <button onclick="addEvent()">Add</button>
-      </div>
-      <ul id="eventsList"></ul>
-    </section>
-
-    <section>
-      <h2>Sports & Highlights</h2>
-      <p>Edit this section with recent NFL/NBA/College notes (needs server for live ESPN stats).</p>
-      <input id="highlightInput" placeholder="YouTube highlight link" />
-      <button onclick="saveHighlight()">Save</button>
-      <ul id="highlightList"></ul>
-    </section>
-
-    <section>
-      <h2>Notre Dame Fighting Irish</h2>
-      <div contenteditable="true">Notes about Notre Dame football here!</div>
-    </section>
-
-    <section>
-      <h2>World News</h2>
-      <div class="flex">
-        <div><strong>Science</strong><p contenteditable="true">Add science news here.</p></div>
-        <div><strong>National Politics</strong><p contenteditable="true">Add national politics news here.</p></div>
-        <div><strong>International Politics</strong><p contenteditable="true">Add international news here.</p></div>
-        <div><strong>Sports</strong><p contenteditable="true">Add sports news here.</p></div>
-      </div>
-    </section>
-
-    <section>
-      <h2>Mini‑Game: Crossy Road</h2>
-      <p>Use arrow keys/WASD to move. R to restart.</p>
-      <canvas id="gameCanvas" width="500" height="300"></canvas>
-    </section>
+<header>
+  <div class="left">
+    <div>
+      <h1 contenteditable="true" id="profileName">Your Name</h1>
+      <div contenteditable="true" id="profileTitle" class="muted">Your Title</div>
+    </div>
   </div>
+  <nav class="muted"> <a href="https://apple.news" target="_blank">Apple News</a> • <a href="https://espn.com" target="_blank">ESPN</a> • <a href="https://youtube.com" target="_blank">YouTube</a></nav>
+</header>
 
-  <footer>
-    <p>Made with ❤️ — Color scheme: baby blue + light orange</p>
-  </footer>
+<main class="container">
+  <div class="row" style="margin-bottom:14px">
+    <div class="col">
+      <section>
+        <h2>About</h2>
+        <p contenteditable="true" id="aboutMe" class="muted">Edit your bio here. This text is stored locally in your browser.</p>
+      </section>
+    </div>
 
-  <div id="hiddenDot"></div>
-  <div id="pokiModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <h3>Enter secret code</h3>
-      <input id="pokiCode" />
-      <button onclick="tryPoki()">Go</button>
-      <button onclick="closePoki()">Close</button>
+    <div class="col">
+      <section>
+        <h2>Resume</h2>
+        <label class="small">Paste or type your resume — it's saved locally.</label>
+        <textarea id="resume" rows="6" style="width:100%;padding:8px;border-radius:8px;border:1px solid #eee;"></textarea>
+      </section>
     </div>
   </div>
 
-  <script>
-    // --- Resume persistence
-    const resumeEl = document.getElementById('resume');
-    resumeEl.value = localStorage.getItem('resume') || '';
-    resumeEl.addEventListener('input',()=> localStorage.setItem('resume',resumeEl.value));
+  <!-- Calendar + News/Games side -->
+  <div class="row">
+    <div class="col" style="flex: 0 1 620px;">
+      <section>
+        <div class="cal-header">
+          <div>
+            <strong id="calTitle">Month Year</strong><div class="small" id="calSubtitle">Click a day to add an event</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button id="prevBtn">Prev</button>
+            <button id="nextBtn">Next</button>
+          </div>
+        </div>
 
-    // --- Friends
-    const friendsList = document.getElementById('friendsList');
-    let friends = JSON.parse(localStorage.getItem('friends')||'[]');
-    function renderFriends(){
-      friendsList.innerHTML = friends.map(f=>`<li>${f.name} <button onclick=\"removeFriend(${f.id})\">x</button></li>`).join('');
-    }
-    function addFriend(){
-      const name=document.getElementById('friendInput').value;
-      if(!name) return;
-      friends.push({id:Date.now(), name});
-      localStorage.setItem('friends', JSON.stringify(friends));
-      document.getElementById('friendInput').value='';
-      renderFriends();
-    }
-    function removeFriend(id){
-      friends=friends.filter(f=>f.id!==id);
-      localStorage.setItem('friends', JSON.stringify(friends));
-      renderFriends();
-    }
-    renderFriends();
+        <div class="cal-grid" id="weekdayLabels" style="margin-bottom:6px">
+          <div class="small muted">Sun</div><div class="small muted">Mon</div><div class="small muted">Tue</div><div class="small muted">Wed</div><div class="small muted">Thu</div><div class="small muted">Fri</div><div class="small muted">Sat</div>
+        </div>
 
-    // --- Events
-    const eventsList=document.getElementById('eventsList');
-    let events=JSON.parse(localStorage.getItem('events')||'[]');
-    function renderEvents(){
-      eventsList.innerHTML = events.map(e=>`<li>${e.title} (${e.date} ${e.time}) <button onclick=\"removeEvent(${e.id})\">x</button></li>`).join('');
-    }
-    function addEvent(){
-      const title=document.getElementById('eventTitle').value;
-      const date=document.getElementById('eventDate').value;
-      const time=document.getElementById('eventTime').value;
-      if(!title||!date) return;
-      events.push({id:Date.now(), title,date,time});
-      localStorage.setItem('events', JSON.stringify(events));
-      document.getElementById('eventTitle').value='';
-      document.getElementById('eventDate').value='';
-      document.getElementById('eventTime').value='';
-      renderEvents();
-    }
-    function removeEvent(id){
-      events=events.filter(e=>e.id!==id);
-      localStorage.setItem('events', JSON.stringify(events));
-      renderEvents();
-    }
-    renderEvents();
+        <div class="cal-grid" id="calendarGrid"></div>
+      </section>
 
-    // --- Highlights
-    const highlightList=document.getElementById('highlightList');
-    let highlights=JSON.parse(localStorage.getItem('highlights')||'[]');
-    function renderHighlights(){
-      highlightList.innerHTML = highlights.map(h=>`<li><a href=\"${h.link}\" target=\"_blank\">${h.link}</a></li>`).join('');
-    }
-    function saveHighlight(){
-      const link=document.getElementById('highlightInput').value;
-      if(!link) return;
-      highlights.unshift({id:Date.now(), link});
-      localStorage.setItem('highlights', JSON.stringify(highlights));
-      document.getElementById('highlightInput').value='';
-      renderHighlights();
-    }
-    renderHighlights();
+      <!-- modal to edit events -->
+      <div id="eventModal" class="modal" style="display:none">
+        <div class="modal-card">
+          <div class="flex-between"><strong id="modalDate">Date</strong><button onclick="closeEventModal()">Close</button></div>
+          <textarea id="eventText" rows="6" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid #eee"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
+            <button onclick="saveEvent()">Save</button>
+            <button onclick="deleteEvent()" style="background:#ffd6d6">Delete</button>
+          </div>
+        </div>
+      </div>
 
-    // --- Hidden Poki link
-    document.getElementById('hiddenDot').onclick=()=>{
-      document.getElementById('pokiModal').style.display='flex';
-    }
-    function tryPoki(){
-      const code=document.getElementById('pokiCode').value.trim();
-      if(code==='494849') window.open('https://poki.com','_blank');
-      else alert('Wrong code');
-    }
-    function closePoki(){ document.getElementById('pokiModal').style.display='none'; }
+    </div>
 
-    // --- Mini-game (Crossy Road)
-    const canvas=document.getElementById('gameCanvas');
-    const ctx=canvas.getContext('2d');
-    const W=canvas.width, H=canvas.height;
-    let running=true, score=0;
-    const player={x:W/2-10,y:H-30,w:20,h:20};
-    const lanes=[60,120,180,240];
-    const cars=[]; const keys={};
-    function spawnCar(){
-      const lane=lanes[Math.floor(Math.random()*lanes.length)];
-      const dir=Math.random()>.5?1:-1;
-      const speed=1+Math.random()*2;
-      const x=dir===1?-40:W+40;
-      cars.push({x,y:lane,w:30,h:20,dir,speed});
+    <div class="col" style="flex: 1 1 360px;">
+      <section>
+        <h3>Sports (ESPN) — latest headlines</h3>
+        <div id="sportsFeed" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div class="small muted" style="margin-top:6px">Source: ESPN. Click headline to open full article.</div>
+      </section>
+
+      <section style="margin-top:12px">
+        <h3>Notre Dame Fighting Irish — headlines</h3>
+        <div id="ndFeed" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div class="small muted">Source: Google News (Notre Dame football)</div>
+      </section>
+
+      <section style="margin-top:12px">
+        <h3>World News — Science | National | International | Sports</h3>
+        <div id="worldNews" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div class="small muted">Feeds powered by Google News RSS via rss2json.</div>
+      </section>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:14px">
+    <div class="col">
+      <section>
+        <h3>Mini-Game — Crossy Road (Endless)</h3>
+        <div class="game-wrap">
+          <canvas id="gameCanvas" width="640" height="360"></canvas>
+          <div class="small muted">Score increases each time you reach the goal. Collisions reset player but game continues.</div>
+
+          <div class="keypad" id="keypad">
+            <div class="key" onclick="press('up')" onmousedown="hold('up')" onmouseup="release('up')" ontouchstart="hold('up')" ontouchend="release('up')">⬆️</div>
+            <div class="key" onclick="press('left')" onmousedown="hold('left')" onmouseup="release('left')" ontouchstart="hold('left')" ontouchend="release('left')">⬅️</div>
+            <div class="key" onclick="press('down')" onmousedown="hold('down')" onmouseup="release('down')" ontouchstart="hold('down')" ontouchend="release('down')">⬇️</div>
+            <div class="key" onclick="press('right')" onmousedown="hold('right')" onmouseup="release('right')" ontouchstart="hold('right')" ontouchend="release('right')">➡️</div>
+            <div class="key" onclick="restartGame()">🔁 Restart</div>
+          </div>
+          <div class="small muted" id="gameScore">Score: 0</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section>
+        <h3>YouTube Highlights (saved)</h3>
+        <label class="small">Paste a YouTube highlight URL and Save — stored locally.</label>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input id="hlInput" placeholder="YouTube highlights link" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eee">
+          <button onclick="saveHighlight()">Save</button>
+        </div>
+        <div id="hlList" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- hidden poki unlock -->
+<div id="hiddenDot" style="position:fixed;right:12px;bottom:12px;width:18px;height:18px;background:var(--accent);border-radius:50%;cursor:pointer;box-shadow:0 6px 12px rgba(0,0,0,0.12)"></div>
+<div id="pokiModal" class="modal" style="display:none">
+  <div class="modal-card">
+    <div class="flex-between"><strong>Secret Redirect</strong><button onclick="closePoki()">Close</button></div>
+    <div style="margin-top:8px"><input id="pokiInput" placeholder="Enter code" style="width:100%;padding:8px;border-radius:8px;border:1px solid #eee"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="tryPoki()">Go</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* -------------------------
+   Persistence: profile/resume/about
+   ------------------------- */
+document.getElementById('aboutMe').innerText = localStorage.getItem('aboutMe') || document.getElementById('aboutMe').innerText;
+document.getElementById('aboutMe').addEventListener('input', ()=> localStorage.setItem('aboutMe', document.getElementById('aboutMe').innerText));
+
+document.getElementById('profileName').innerText = localStorage.getItem('profileName') || document.getElementById('profileName').innerText;
+document.getElementById('profileName').addEventListener('input', ()=> localStorage.setItem('profileName', document.getElementById('profileName').innerText));
+
+document.getElementById('profileTitle').innerText = localStorage.getItem('profileTitle') || document.getElementById('profileTitle').innerText;
+document.getElementById('profileTitle').addEventListener('input', ()=> localStorage.setItem('profileTitle', document.getElementById('profileTitle').innerText));
+
+const resumeEl = document.getElementById('resume');
+resumeEl.value = localStorage.getItem('resume') || '';
+resumeEl.addEventListener('input', ()=> localStorage.setItem('resume', resumeEl.value));
+
+/* -------------------------
+   Calendar (classic grid, next/prev within next 12 months)
+   ------------------------- */
+const calendarGrid = document.getElementById('calendarGrid');
+const calTitle = document.getElementById('calTitle');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const eventModal = document.getElementById('eventModal');
+const modalDate = document.getElementById('modalDate');
+const eventText = document.getElementById('eventText');
+
+const today = new Date();
+const startDate = new Date(today.getFullYear(), today.getMonth(), 1); // base month
+let monthOffset = 0; // 0..11 allowed (current month .. +11 months)
+const MAX_OFFSET = 11;
+
+const eventsKey = 'calendarEvents_v1';
+let calendarEvents = JSON.parse(localStorage.getItem(eventsKey) || '{}'); // keyed by yyyy-mm-dd -> text
+
+function formatYMD(d){ const y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), day=('0'+d.getDate()).slice(-2); return `${y}-${m}-${day}`; }
+
+function renderCalendar(){
+  const m = new Date(startDate.getFullYear(), startDate.getMonth()+monthOffset, 1);
+  const monthName = m.toLocaleString(undefined,{month:'long', year:'numeric'});
+  calTitle.innerText = monthName;
+  prevBtn.disabled = (monthOffset <= 0);
+  nextBtn.disabled = (monthOffset >= MAX_OFFSET);
+
+  // first day of week index
+  const firstDow = new Date(m.getFullYear(), m.getMonth(), 1).getDay();
+  const daysInMonth = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
+
+  // previous month's trailing days (we'll render blanks for simpler look)
+  calendarGrid.innerHTML = '';
+  // create day cells (we'll start with blank placeholders)
+  const totalCells = 42; // 6 rows x 7 cols for safe layout
+  for(let i=0;i<totalCells;i++){
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+    calendarGrid.appendChild(cell);
+  }
+  const cells = Array.from(calendarGrid.children);
+  // fill numbers starting at firstDow index
+  for(let day=1; day<=daysInMonth; day++){
+    const idx = firstDow + (day-1);
+    const cell = cells[idx];
+    cell.innerHTML = '';
+    const dateObj = new Date(m.getFullYear(), m.getMonth(), day);
+    const ymd = formatYMD(dateObj);
+
+    const num = document.createElement('div');
+    num.className = 'day-num';
+    num.textContent = day;
+    if(ymd === formatYMD(today)) num.classList.add('day-today');
+    cell.appendChild(num);
+
+    // show event snippet if present
+    if(calendarEvents[ymd]){
+      const dot = document.createElement('div'); dot.className='small'; dot.innerHTML = '<span class="events-dot"></span>' + escapeHTML(calendarEvents[ymd].split('\\n')[0].slice(0,60));
+      cell.appendChild(dot);
+    } else {
+      const placeholder = document.createElement('div'); placeholder.className='small muted'; placeholder.style.marginTop='6px';
+      placeholder.textContent = '';
+      cell.appendChild(placeholder);
     }
-    function loop(){
-      ctx.clearRect(0,0,W,H);
-      ctx.fillStyle='#e6f7ff'; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle='rgba(255,223,170,0.6)'; ctx.fillRect(0,0,W,40);
-      if(Math.random()<0.03) spawnCar();
-      for(const c of cars){
-        c.x+=c.speed*c.dir*2;
-        ctx.fillStyle='salmon'; ctx.fillRect(c.x,c.y,c.w,c.h);
-      }
-      if(keys['ArrowUp']||keys['w']) player.y-=4;
-      if(keys['ArrowDown']||keys['s']) player.y+=4;
-      if(keys['ArrowLeft']||keys['a']) player.x-=4;
-      if(keys['ArrowRight']||keys['d']) player.x+=4;
-      player.x=Math.max(0,Math.min(W-player.w,player.x));
-      player.y=Math.max(0,Math.min(H-player.h,player.y));
-      ctx.fillStyle='blue'; ctx.fillRect(player.x,player.y,player.w,player.h);
-      for(const c of cars){
-        if(player.x<c.x+c.w && player.x+player.w>c.x && player.y<c.y+c.h && player.y+player.h>c.y){
-          running=false;
-          ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,W,H);
-          ctx.fillStyle='white'; ctx.fillText('Game Over — press R to restart',50,H/2);
-        }
-      }
-      if(player.y<40){score++; player.x=W/2-10; player.y=H-30;}
-      ctx.fillStyle='black'; ctx.fillText('Score: '+score,10,15);
-      if(running) requestAnimationFrame(loop);
+
+    // click to edit only if date is within allowed range: from today to today+365 days
+    const minDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const maxDate = new Date(); maxDate.setDate(maxDate.getDate()+365);
+    if(dateObj >= minDate && dateObj <= maxDate){
+      cell.style.cursor = 'pointer';
+      cell.addEventListener('click', ()=> openEventModal(ymd, dateObj));
+    } else {
+      cell.style.opacity = 0.5;
     }
-    loop();
-    window.addEventListener('keydown',e=>{keys[e.key]=true; if(e.key==='r'){running=true; score=0; player.x=W/2-10; player.y=H-30; loop();}});
-    window.addEventListener('keyup',e=>keys[e.key]=false);
-  </script>
+  }
+}
+
+function openEventModal(ymd, dateObj){
+  modalDate.innerText = dateObj.toDateString();
+  eventText.value = calendarEvents[ymd] || '';
+  eventModal.style.display = 'flex';
+  eventModal.dataset.ymd = ymd;
+  eventText.focus();
+}
+function closeEventModal(){ eventModal.style.display='none'; eventModal.dataset.ymd=''; }
+function saveEvent(){
+  const ymd = eventModal.dataset.ymd;
+  if(!ymd) return;
+  const txt = eventText.value.trim();
+  if(txt) calendarEvents[ymd] = txt;
+  else delete calendarEvents[ymd];
+  localStorage.setItem(eventsKey, JSON.stringify(calendarEvents));
+  closeEventModal(); renderCalendar();
+}
+function deleteEvent(){
+  const ymd = eventModal.dataset.ymd;
+  if(ymd && calendarEvents[ymd]) { delete calendarEvents[ymd]; localStorage.setItem(eventsKey, JSON.stringify(calendarEvents)); }
+  closeEventModal(); renderCalendar();
+}
+
+prevBtn.addEventListener('click', ()=>{ if(monthOffset>0){ monthOffset--; renderCalendar(); }});
+nextBtn.addEventListener('click', ()=>{ if(monthOffset<MAX_OFFSET){ monthOffset++; renderCalendar(); }});
+
+renderCalendar();
+
+/* -------------------------
+   Simple escaping helper
+   ------------------------- */
+function escapeHTML(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+/* -------------------------
+   RSS Feeds via rss2json
+   Using: https://api.rss2json.com/v1/api.json?rss_url=<encoded feed url>
+   (rss2json client-side proxy supports CORS)
+   ------------------------- */
+
+async function fetchRSStoContainer(rssUrl, containerId, limit=5){
+  const container = document.getElementById(containerId);
+  container.innerHTML = '<div class="small muted">Loading...</div>';
+  try{
+    const api = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl);
+    const res = await fetch(api);
+    if(!res.ok) throw new Error('Feed fetch failed');
+    const data = await res.json();
+    const items = data.items ? data.items.slice(0,limit) : [];
+    container.innerHTML = items.map(it=> renderNewsItem(it)).join('');
+  }catch(err){
+    container.innerHTML = '<div class="small muted">Unable to load feed. <a href="'+rssUrl+'" target="_blank">Open source</a></div>';
+    console.warn('rss error', err);
+  }
+}
+
+function renderNewsItem(item){
+  // item: {title, link, thumbnail, description}
+  // Small sanitization and summary extraction:
+  const title = escapeHTML(item.title || 'No title');
+  const link = item.link || '#';
+  // try to extract first <img> from description if no thumbnail
+  let img = item.thumbnail || '';
+  if(!img && item.description){
+    const m = item.description.match(/<img[^>]+src=\"([^\">]+)\"/i);
+    if(m) img = m[1];
+  }
+  // strip tags to get summary
+  const sum = (item.description || '').replace(/(<([^>]+)>)/gi, '').trim().slice(0,200);
+  const imgHtml = img ? `<img src="${img}" alt="" />` : `<div style="width:92px;height:60px;border-radius:6px;background:#f0f6fb"></div>`;
+  return `<div class="news-item"><a href="${link}" target="_blank">${imgHtml}</a><div style="flex:1"><a href="${link}" target="_blank">${title}</a><p>${escapeHTML(sum)}</p></div></div>`;
+}
+
+/* FEED URLs */
+const espnRss = 'https://www.espn.com/espn/rss/news'; // ESPN top news
+const ndRss = 'https://news.google.com/rss/search?q=Notre+Dame+football&hl=en-US&gl=US&ceid=US:en';
+const scienceRss = 'https://news.google.com/rss/search?q=science&hl=en-US&gl=US&ceid=US:en';
+const nationalRss = 'https://news.google.com/rss/search?q=US+politics&hl=en-US&gl=US&ceid=US:en';
+const internationalRss = 'https://news.google.com/rss/search?q=international+politics&hl=en-US&gl=US&ceid=US:en';
+const sportsNewsRss = 'https://news.google.com/rss/search?q=sports&hl=en-US&gl=US&ceid=US:en';
+
+/* kick off */
+fetchRSStoContainer(espnRss, 'sportsFeed', 6);
+fetchRSStoContainer(ndRss, 'ndFeed', 6);
+fetchRSStoContainer(scienceRss, 'worldNews', 3);
+fetchRSStoContainer(nationalRss, 'worldNews', 3);
+fetchRSStoContainer(internationalRss, 'worldNews', 3);
+fetchRSStoContainer(sportsNewsRss, 'worldNews', 3);
+
+/* The worldNews container currently will be overwritten by each call; we'll append */
+async function fetchAndAppend(rssUrl, containerId, limit=3){
+  const container = document.getElementById(containerId);
+  const api = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl);
+  try{
+    const res = await fetch(api);
+    const data = await res.json();
+    const items = data.items ? data.items.slice(0,limit) : [];
+    const html = items.map(it => renderNewsItem(it)).join('');
+    container.insertAdjacentHTML('beforeend', html);
+  }catch(e){ console.warn('rss append err', e); }
+}
+/* Overwrite previous naive calls with append flow */
+document.getElementById('worldNews').innerHTML = '';
+fetchAndAppend(scienceRss, 'worldNews', 3);
+fetchAndAppend(nationalRss, 'worldNews', 3);
+fetchAndAppend(internationalRss, 'worldNews', 3);
+fetchAndAppend(sportsNewsRss, 'worldNews', 3);
+
+/* -------------------------
+   Save / show highlights (YouTube)
+   ------------------------- */
+const hlList = document.getElementById('hlList');
+let highlights = JSON.parse(localStorage.getItem('highlights_v1') || '[]');
+function renderHL(){
+  hlList.innerHTML = highlights.map(h => {
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px;border-radius:8px;background:#f8fafc"><a href="${h.link}" target="_blank">${escapeHTML(h.link)}</a><div><button onclick="removeHL(${h.id})" style="background:#ffd6d6">x</button></div></div>`;
+  }).join('');
+}
+function saveHighlight(){
+  const v = document.getElementById('hlInput').value.trim();
+  if(!v) return;
+  highlights.unshift({id:Date.now(), link:v});
+  localStorage.setItem('highlights_v1', JSON.stringify(highlights));
+  document.getElementById('hlInput').value = '';
+  renderHL();
+}
+function removeHL(id){ highlights = highlights.filter(h=>h.id!==id); localStorage.setItem('highlights_v1', JSON.stringify(highlights)); renderHL(); }
+renderHL();
+
+/* -------------------------
+   Hidden Poki modal
+   ------------------------- */
+document.getElementById('hiddenDot').addEventListener('click', ()=> document.getElementById('pokiModal').style.display = 'flex');
+function closePoki(){ document.getElementById('pokiModal').style.display = 'none'; }
+function tryPoki(){
+  const code = document.getElementById('pokiInput').value.trim();
+  if(code === '494849') window.open('https://poki.com','_blank');
+  else alert('Wrong code');
+}
+
+/* -------------------------
+   Crossy Road Game (endless) + on-screen keypad
+   ------------------------- */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let W = canvas.width, H = canvas.height;
+function resizeCanvas(){ W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = W; canvas.height = H; }
+window.addEventListener('resize', ()=> { resizeCanvas(); });
+resizeCanvas();
+
+let player = { x: W/2 - 12, y: H - 34, w:24, h:24, color: '#0b63ff' };
+const lanes = [ H*0.6, H*0.5, H*0.4, H*0.3 ];
+let cars = [];
+let keys = { up:false, down:false, left:false, right:false };
+let score = 0;
+let lastSpawn = 0;
+
+function spawnCar(){
+  const lane = lanes[Math.floor(Math.random()*lanes.length)];
+  const dir = Math.random() > 0.5 ? 1 : -1;
+  const speed = 1.2 + Math.random()*2.2;
+  const x = dir === 1 ? -80 : W + 80;
+  cars.push({ x, y: lane, w: 48 + Math.random()*40, h: 22, dir, speed, color: '#FF6B6B' });
+}
+
+function update(dt){
+  // spawn logic
+  lastSpawn += dt;
+  if(lastSpawn > 450 + Math.random()*800){ spawnCar(); lastSpawn = 0; }
+
+  // move cars
+  for(let i=cars.length-1;i>=0;i--){
+    const c = cars[i];
+    c.x += c.speed * c.dir * (dt/16); // scale with time
+    // remove off-screen cars
+    if(c.dir === 1 && c.x > W + 120) cars.splice(i,1);
+    if(c.dir === -1 && c.x < -160) cars.splice(i,1);
+  }
+
+  // player movement
+  if(keys.up) player.y -= 3 * (dt/16);
+  if(keys.down) player.y += 3 * (dt/16);
+  if(keys.left) player.x -= 3 * (dt/16);
+  if(keys.right) player.x += 3 * (dt/16);
+  // clamp
+  player.x = Math.max(4, Math.min(W - player.w - 4, player.x));
+  player.y = Math.max(4, Math.min(H - player.h - 4, player.y));
+
+  // collision detection
+  for(const c of cars){
+    if(player.x < c.x + c.w && player.x + player.w > c.x && player.y < c.y + c.h && player.y + player.h > c.y){
+      // collision: reset player to start, small score penalty
+      player.x = W/2 - player.w/2;
+      player.y = H - 34;
+      score = Math.max(0, score - 1);
+      // brief flash
+      flashScreen();
+      break;
+    }
+  }
+
+  // goal reached (top area)
+  if(player.y < H*0.12){
+    score++;
+    player.x = W/2 - player.w/2;
+    player.y = H - 34;
+  }
+
+  document.getElementById('gameScore').innerText = 'Score: ' + score;
+}
+
+let flashTimer = 0;
+function flashScreen(){ flashTimer = 12; }
+
+function draw(){
+  // background
+  ctx.clearRect(0,0,W,H);
+  // goal area
+  ctx.fillStyle = '#fff3db';
+  ctx.fillRect(0,0,W, H*0.12);
+  // lanes/road
+  ctx.fillStyle = '#e6f7ff';
+  ctx.fillRect(0,0,W,H);
+  // cars
+  for(const c of cars){
+    ctx.fillStyle = c.color;
+    ctx.fillRect(c.x, c.y, c.w, c.h);
+  }
+  // player
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+  // HUD
+  ctx.fillStyle = '#05263a';
+  ctx.font = '16px system-ui';
+  ctx.fillText('Score: '+score, 10, 22);
+  if(flashTimer > 0){
+    ctx.fillStyle = 'rgba(255,0,0,0.12)';
+    ctx.fillRect(0,0,W,H);
+  }
+}
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(60, now - last);
+  last = now;
+  update(dt);
+  draw();
+  if(flashTimer>0) flashTimer--;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// keyboard handlers
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowUp' || e.key === 'w') keys.up = true;
+  if(e.key === 'ArrowDown' || e.key === 's') keys.down = true;
+  if(e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+  if(e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+  if(e.key === 'r') restartGame();
+});
+window.addEventListener('keyup', (e)=>{
+  if(e.key === 'ArrowUp' || e.key === 'w') keys.up = false;
+  if(e.key === 'ArrowDown' || e.key === 's') keys.down = false;
+  if(e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+  if(e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+});
+
+// touchscreen / keypad control: support hold and release
+let holdIntervals = {};
+function hold(dir){
+  keys[dir] = true;
+}
+function release(dir){
+  keys[dir] = false;
+}
+function press(dir){
+  // brief press
+  keys[dir] = true;
+  setTimeout(()=> keys[dir] = false, 160);
+}
+function restartGame(){ cars = []; player.x = W/2 - player.w/2; player.y = H - 34; score = 0; }
+
+/* -------------------------
+   Initialize RSS containers more defensively (some feeds may not allow many requests)
+   ------------------------- */
+
+// Re-fetch ESPN every 3 minutes, ND every 4 minutes, world news every 6 minutes
+setInterval(()=>fetchRSStoContainer(espnRss, 'sportsFeed', 6), 180000);
+setInterval(()=>fetchRSStoContainer(ndRss, 'ndFeed', 6), 240000);
+setInterval(()=>{ document.getElementById('worldNews').innerHTML = ''; fetchAndAppend(scienceRss, 'worldNews', 3); fetchAndAppend(nationalRss, 'worldNews', 3); fetchAndAppend(internationalRss, 'worldNews', 3); fetchAndAppend(sportsNewsRss, 'worldNews', 3); }, 360000);
+
+/* -------------------------
+   small helpers for opening modal from outside (exposed for inline HTML)
+   ------------------------- */
+window.openEventModal = openEventModal;
+window.closeEventModal = closeEventModal;
+window.saveEvent = saveEvent;
+window.deleteEvent = deleteEvent;
+window.saveHighlight = saveHighlight;
+window.removeHL = removeHL;
+window.press = press;
+window.hold = hold;
+window.release = release;
+window.restartGame = restartGame;
+window.closePoki = closePoki;
+window.tryPoki = tryPoki;
+
+</script>
 </body>
 </html>
