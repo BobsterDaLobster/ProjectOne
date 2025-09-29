@@ -279,14 +279,13 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    const TILE = 20;
+    const PLAYER_SIZE = 20;
+
     let player, lanes, offsetY, score;
 
     function resetGame() {
-      player = { x: 200, y: 520, size: 20 };
-      // snap player exactly to grid
-      player.x = Math.floor(player.x / 20) * 20;
-      player.y = Math.floor(player.y / 20) * 20;
-
+      player = { x: 10 * TILE, y: 26 * TILE, size: PLAYER_SIZE };
       lanes = [];
       offsetY = 0;
       score = 0;
@@ -315,19 +314,19 @@
     }
 
     function move(dir) {
-      if (dir === 'up') player.y -= 20;
-      if (dir === 'down') player.y += 20;
-      if (dir === 'left') player.x -= 20;
-      if (dir === 'right') player.x += 20;
+      if (dir === 'up') player.y -= TILE;
+      if (dir === 'down') player.y += TILE;
+      if (dir === 'left') player.x -= TILE;
+      if (dir === 'right') player.x += TILE;
 
-      player.x = Math.floor(player.x / 20) * 20;
-      player.y = Math.floor(player.y / 20) * 20;
+      player.x = Math.floor(player.x / TILE) * TILE;
+      player.y = Math.floor(player.y / TILE) * TILE;
 
       if (player.y < 200) {
-        offsetY += 20;
-        player.y += 20;
+        offsetY += TILE;
+        player.y += TILE;
         score++;
-        if (lanes.length < score/20 + 40) generateLane(lanes.length);
+        if (lanes.length < score/TILE + 40) generateLane(lanes.length);
       }
     }
 
@@ -335,47 +334,41 @@
       ctx.clearRect(0,0,canvas.width,canvas.height);
 
       for (let i = 0; i < lanes.length; i++) {
-        const laneY = 550 - (i*20) + offsetY;
-        if (laneY < -20 || laneY > 570) continue;
+        const laneY = 550 - (i*TILE) + offsetY;
+        if (laneY < -TILE || laneY > 570) continue;
 
         if (lanes[i].type === 'grass') {
           ctx.fillStyle = '#7cfc00';
-          ctx.fillRect(0, laneY, 400, 20);
+          ctx.fillRect(0, laneY, 400, TILE);
         } else if (lanes[i].type === 'road') {
           ctx.fillStyle = '#444';
-          ctx.fillRect(0, laneY, 400, 20);
-          if (Math.random() < 0.008) {
-            lanes[i].cars.push({ 
-              x: Math.random()<0.5?-40:440, 
-              speed: (Math.random()<0.5?-1:1) * 1.2 
-            });
+          ctx.fillRect(0, laneY, 400, TILE);
+          if (Math.random() < 0.01) {
+            lanes[i].cars.push({ x: Math.random()<0.5?-40:440, speed: (Math.random()*1+0.5)*(Math.random()<0.5?-1:1) });
           }
           lanes[i].cars.forEach(car => {
             ctx.fillStyle = 'red';
             car.x += car.speed;
-            ctx.fillRect(car.x, laneY, 40, 20);
-            if (player.x < car.x+40 && player.x+20>car.x && player.y < laneY+20 && player.y+20>laneY) resetGame();
+            ctx.fillRect(car.x, laneY, 40, TILE);
+            if (player.x < car.x+40 && player.x+PLAYER_SIZE>car.x && player.y < laneY+TILE && player.y+PLAYER_SIZE>laneY) resetGame();
           });
         } else if (lanes[i].type === 'river') {
           ctx.fillStyle = '#00f';
-          ctx.fillRect(0, laneY, 400, 20);
-          if (Math.random() < 0.02) {
-            lanes[i].logs.push({ 
-              x: Math.random()<0.5?-80:440, 
-              speed: (Math.random()<0.5?-1:1) * 0.8 
-            });
+          ctx.fillRect(0, laneY, 400, TILE);
+          if (Math.random() < 0.03) {
+            lanes[i].logs.push({ x: Math.random()<0.5?-80:440, speed: (Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1) });
           }
           let onLog = false;
           lanes[i].logs.forEach(log => {
             ctx.fillStyle = 'saddlebrown';
             log.x += log.speed;
-            ctx.fillRect(log.x, laneY, 80, 20);
-            if (player.x < log.x+80 && player.x+20>log.x && player.y < laneY+20 && player.y+20>laneY) {
+            ctx.fillRect(log.x, laneY, 80, TILE);
+            if (player.x < log.x+80 && player.x+PLAYER_SIZE>log.x && player.y < laneY+TILE && player.y+PLAYER_SIZE>laneY) {
               onLog = true;
               player.x += log.speed;
             }
           });
-          if (player.y < laneY+20 && player.y+20 > laneY && !onLog) resetGame();
+          if (player.y < laneY+TILE && player.y+PLAYER_SIZE > laneY && !onLog) resetGame();
         }
       }
 
@@ -384,6 +377,7 @@
       ctx.fillStyle = 'black';
       ctx.fillText('Score: '+score, 10, 20);
 
+      // Draw keypad
       const baseX = canvas.width - 170;
       const baseY = canvas.height - 120;
       const keys = [
@@ -412,31 +406,20 @@
       const baseY = canvas.height - 120;
 
       const regions = {
-        up:    {x: baseX+50, y: baseY, w:40, h:30, label:'⬆️'},
-        left:  {x: baseX, y: baseY+40, w:40, h:30, label:'⬅️'},
-        down:  {x: baseX+50, y: baseY+40, w:40, h:30, label:'⬇️'},
-        right: {x: baseX+100, y: baseY+40, w:40, h:30, label:'➡️'},
-        restart:{x: baseX+50, y: baseY+80, w:40, h:30, label:'🔄'}
+        up:    {x: baseX+50, y: baseY, w:40, h:30},
+        left:  {x: baseX, y: baseY+40, w:40, h:30},
+        down:  {x: baseX+50, y: baseY+40, w:40, h:30},
+        right: {x: baseX+100, y: baseY+40, w:40, h:30},
+        restart:{x: baseX+50, y: baseY+80, w:40, h:30}
       };
 
       for (const [key, r] of Object.entries(regions)) {
         if (x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h) {
-          ctx.fillStyle = '#ffd580';
-          ctx.fillRect(r.x, r.y, r.w, r.h);
-          ctx.fillStyle = 'white';
-          ctx.fillText(r.label, r.x+10, r.y+20);
-          setTimeout(() => {
-            ctx.fillStyle = '#87cefa';
-            ctx.fillRect(r.x, r.y, r.w, r.h);
-            ctx.fillStyle = 'white';
-            ctx.fillText(r.label, r.x+10, r.y+20);
-          }, 150);
-
-          if (key === 'up') move('up');
-          if (key === 'down') move('down');
-          if (key === 'left') move('left');
-          if (key === 'right') move('right');
-          if (key === 'restart') resetGame();
+          if (key === 'restart') {
+            resetGame();
+          } else {
+            move(key);
+          }
         }
       }
     });
