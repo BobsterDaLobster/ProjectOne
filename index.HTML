@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Personal Profile — Crossy Road</title>
+<title>Personal Profile — Infinite Crossy Road</title>
 <style>
-  :root { --baby: #add8e6; --peach: #ffd580; --accent: #87cefa; --dark: #333; }
+  :root{--baby:#add8e6;--peach:#ffd580;--accent:#87cefa;--dark:#333}
   html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(90deg,var(--baby),var(--peach))}
   header{background:var(--accent);color:#fff;padding:14px;text-align:center}
   main{max-width:1100px;margin:14px auto;padding:0 12px}
@@ -23,7 +23,7 @@
   canvas{display:block;width:100%;height:auto;border-radius:6px;background:#eaf8ff;border:3px solid var(--dark)}
   #keypad{position:absolute;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(3,46px);gap:6px;pointer-events:none}
   .kbtn{width:46px;height:42px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-weight:700;cursor:pointer;pointer-events:auto;box-shadow:0 2px 4px rgba(0,0,0,.12)}
-  #scoreboard{position:absolute;left:12px;top:12px;background:rgba(255,255,255,0.85);padding:8px;border-radius:6px;font-weight:700}
+  #scoreboard{position:absolute;left:12px;top:12px;background:rgba(255,255,255,0.9);padding:8px;border-radius:6px;font-weight:700}
   /* news */
   .news-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
   .article{background:#fff;padding:8px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
@@ -37,7 +37,7 @@
 
   <section>
     <h2>My Resume</h2>
-    <p>Paste your resume here (editable later if you want).</p>
+    <p>Paste your resume here (editable later).</p>
   </section>
 
   <section>
@@ -73,17 +73,17 @@
         <button class="kbtn" data-dir="reset">⟲</button>
       </div>
     </div>
-    <p style="text-align:center;font-size:.95rem;margin-top:8px">Use arrow keys or on-screen keys. 'r' to reset.</p>
+    <p style="text-align:center;font-size:.95rem;margin-top:8px">Use arrow keys or on-screen keys. Press R to reset.</p>
   </section>
 
   <section>
     <h2>Sports (ESPN)</h2>
-    <p><a href="https://www.espn.com" target="_blank">Open ESPN for highlights</a></p>
+    <p><a href="https://www.espn.com" target="_blank" rel="noopener">Open ESPN for highlights</a></p>
   </section>
 
   <section>
     <h2>Notre Dame Fighting Irish</h2>
-    <p><a href="https://www.espn.com/college-football/team/_/id/87/notre-dame-fighting-irish" target="_blank">Notre Dame on ESPN</a></p>
+    <p><a href="https://www.espn.com/college-football/team/_/id/87/notre-dame-fighting-irish" target="_blank" rel="noopener">Notre Dame on ESPN</a></p>
   </section>
 
   <section>
@@ -114,24 +114,17 @@ function renderCalendar(){
   calendarGrid.innerHTML = '';
   const year = calDate.getFullYear(), month = calDate.getMonth();
   monthYearEl.textContent = calDate.toLocaleString('default',{month:'long', year:'numeric'});
-  // header days
   ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{
-    const el = document.createElement('div');
-    el.textContent = d;
-    el.style.fontWeight = '700';
-    calendarGrid.appendChild(el);
+    const el = document.createElement('div'); el.textContent = d; el.style.fontWeight='700'; calendarGrid.appendChild(el);
   });
   const firstDay = new Date(year,month,1).getDay();
   for(let i=0;i<firstDay;i++) calendarGrid.appendChild(document.createElement('div'));
   const daysInMonth = new Date(year,month+1,0).getDate();
   for(let d=1; d<=daysInMonth; d++){
-    const cell = document.createElement('div');
-    cell.className = 'day';
-    cell.textContent = d;
+    const cell = document.createElement('div'); cell.className='day'; cell.textContent=d;
     const today = new Date();
     if(d===today.getDate() && month===today.getMonth() && year===today.getFullYear()){
-      cell.classList.add('today');
-      selectDay(year,month,d);
+      cell.classList.add('today'); selectDay(year,month,d);
     }
     cell.onclick = ()=> selectDay(year,month,d);
     calendarGrid.appendChild(cell);
@@ -143,14 +136,10 @@ function selectDay(y,m,d){
   selectedDateTitle.textContent = new Date(y,m,d).toDateString();
   eventListEl.innerHTML = '';
   (storedEvents[k]||[]).forEach((ev, idx)=>{
-    const li = document.createElement('li');
-    li.textContent = ev;
-    const del = document.createElement('button');
-    del.textContent = 'X';
-    del.style.marginLeft='8px';
+    const li = document.createElement('li'); li.textContent = ev;
+    const del = document.createElement('button'); del.textContent = 'X'; del.style.marginLeft='8px';
     del.onclick = ()=> { storedEvents[k].splice(idx,1); localStorage.setItem('profile_events', JSON.stringify(storedEvents)); selectDay(y,m,d); };
-    li.appendChild(del);
-    eventListEl.appendChild(li);
+    li.appendChild(del); eventListEl.appendChild(li);
   });
   newEventInput.dataset.key = k;
 }
@@ -158,8 +147,9 @@ function addEvent(){
   const key = newEventInput.dataset.key;
   if(!key) return alert('Pick a date first');
   if(!storedEvents[key]) storedEvents[key] = [];
-  if(!newEventInput.value.trim()) return;
-  storedEvents[key].push(newEventInput.value.trim());
+  const v = newEventInput.value.trim();
+  if(!v) return;
+  storedEvents[key].push(v);
   localStorage.setItem('profile_events', JSON.stringify(storedEvents));
   const [yy,mm,dd] = key.split('-').map(Number);
   selectDay(yy,mm,dd);
@@ -169,7 +159,7 @@ function prevMonth(){ calDate.setMonth(calDate.getMonth()-1); renderCalendar(); 
 function nextMonth(){ calDate.setMonth(calDate.getMonth()+1); renderCalendar(); }
 renderCalendar();
 
-/* ---------------- News (Google News RSS via AllOrigins) ---------------- */
+/* ---------------- News (Google News via AllOrigins) ---------------- */
 async function fetchTopHeadlines(){
   try{
     const proxy = 'https://api.allorigins.win/get?url=';
@@ -203,87 +193,83 @@ document.getElementById('secretArea').addEventListener('click', ()=>{
   if(code === '494849') window.location.href = 'https://poki.com';
 });
 
-/* ---------------- Crossy Road (robust infinite) ---------------- */
+/* ---------------- Infinite Crossy Road Game ---------------- */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const TILE = 20;                 // tile size in CSS px
+
 let dpr = window.devicePixelRatio || 1;
 let cssW = 0, cssH = 0;
+const TILE = 20;
+const SAFE_EVERY = 10;      // safe zone every 10 lanes
+const INITIAL_GENERATE = 80; // initial lanes to generate
 
+let lanes = [];    // lanes[0] bottom-most lane index 0
+let player = null; // { x, y, size }
+let cameraY = 0;
+let lastTS = null;
+let score = 0;
+let high = +localStorage.getItem('crossy_high') || 0;
+
+// fit canvas to CSS size and set transform so we draw in CSS px
 function fitCanvas(){
-  // set backing store to CSS size * dpr and map drawing so ctx uses CSS px coords
   const rect = canvas.getBoundingClientRect();
   cssW = rect.width;
   cssH = rect.height;
+  dpr = window.devicePixelRatio || 1;
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', ()=>{
-  dpr = window.devicePixelRatio || 1;
   fitCanvas();
-  // clamp player x if exists
+  // clamp player.x if needed
   if(player) player.x = Math.max(0, Math.min(cssW - player.size, player.x));
 });
 fitCanvas();
 
-// world state
-let lanes = [];      // lane array; index = lane number (0 bottom)
-let player = null;   // {x,y,size}
-let cameraY = 0;     // world Y of top of viewport
-let lastTs = null;
-let score = 0;
-let high = +localStorage.getItem('crossy_high') || 0;
-
-// lane generation parameters
-const RIVER_PROB = 0.40;  // increased river chance
-const ROAD_PROB = 0.35;   // after river
-const SAFE_EVERY = 10;    // safe zone every 10 lanes
-const INITIAL_LANES = 80; // initial generated lanes
-
+// lane creation: increased river chance, randomized positions to avoid vertical alignment
 function makeLane(idx){
-  if(idx % SAFE_EVERY === 0) return { type: 'safe', items: [] };
+  if(idx % SAFE_EVERY === 0) return { type:'safe', items:[] };
   const r = Math.random();
-  if(r < RIVER_PROB){
-    // river with multiple logs
-    const items = [];
+  // more rivers: ~40%
+  if(r < 0.40){
     const count = 2 + Math.floor(Math.random()*3); // 2..4 logs
-    const baseSpeed = (Math.random()*60 + 30) * (Math.random() < 0.5 ? 1 : -1); // px/sec
-    for(let i=0;i<count;i++){
-      // spread logs across width, with jitter
-      const gap = cssW / count;
-      const jitter = (Math.random() - 0.5) * gap * 0.6;
-      const x = Math.random()*cssW; // randomized start positions avoid vertical alignment
-      items.push({ x: x + i*20 + jitter, w: 80, speed: baseSpeed });
-    }
-    return { type: 'river', items, baseSpeed };
-  } else if(r < RIVER_PROB + ROAD_PROB){
-    // road with cars
+    const baseSpeed = (Math.random()*60 + 30) * (Math.random()<0.5 ? 1 : -1); // px/sec
     const items = [];
-    const count = 2 + Math.floor(Math.random()*3); // 2..4 cars
-    const baseSpeed = (Math.random()*80 + 40) * (Math.random() < 0.5 ? 1 : -1); // px/sec
+    const gap = Math.max(120, Math.floor(cssW / count));
     for(let i=0;i<count;i++){
-      const gap = cssW / count;
       const jitter = (Math.random() - 0.5) * gap * 0.6;
-      const x = Math.random()*cssW;
-      items.push({ x: x + i*10 + jitter, w: 40, speed: baseSpeed });
+      const x = (i * gap) + jitter + (Math.random()*60 - 30);
+      items.push({ x: x, w: 80, speed: baseSpeed });
     }
-    return { type: 'road', items, baseSpeed };
+    return { type:'river', items, baseSpeed };
+  } else if(r < 0.75){
+    // road ~35%
+    const count = 2 + Math.floor(Math.random()*3); // 2..4 cars
+    const baseSpeed = (Math.random()*80 + 40) * (Math.random()<0.5 ? 1 : -1);
+    const items = [];
+    const gap = Math.max(120, Math.floor(cssW / count));
+    for(let i=0;i<count;i++){
+      const jitter = (Math.random() - 0.5) * gap * 0.6;
+      const x = (i * gap) + jitter + (Math.random()*80 - 40);
+      items.push({ x: x, w: 40, speed: baseSpeed });
+    }
+    return { type:'road', items, baseSpeed };
   } else {
-    return { type: 'grass', items: [] };
+    return { type:'grass', items:[] };
   }
 }
 
-function ensureLanesUpTo(n){
+// ensure lanes exist up to index n
+function ensureLanes(n){
   while(lanes.length <= n) lanes.push(makeLane(lanes.length));
 }
 
-// initialize world & player
-function resetPlayerAndWorld(preserveWorld = true){
-  if(!preserveWorld) lanes = [];
-  // ensure initial lanes
-  ensureLanesUpTo(INITIAL_LANES);
-  // place player in bottom safe area (near lane index 26)
+// init world & player
+function initWorld(preserveLanes = true){
+  if(!preserveLanes) lanes = [];
+  ensureLanes(INITIAL_GENERATE);
+  // place player at bottom safe area (lane ~26)
   const startLane = 26;
   player = {
     x: Math.floor((cssW/2) / TILE) * TILE,
@@ -292,31 +278,30 @@ function resetPlayerAndWorld(preserveWorld = true){
     onLog: false
   };
   cameraY = Math.max(0, player.y - cssH/2);
-  lastTs = null;
+  lastTS = null;
   score = 0;
 }
-resetPlayerAndWorld(true);
+initWorld(true);
 
-// player movement (snaps to tile)
+// move player snapped to tiles
 function movePlayer(dir){
   if(!player) return;
   if(dir === 'up') player.y -= TILE;
-  if(dir === 'down') player.y += TILE;
-  if(dir === 'left') player.x -= TILE;
-  if(dir === 'right') player.x += TILE;
+  else if(dir === 'down') player.y += TILE;
+  else if(dir === 'left') player.x -= TILE;
+  else if(dir === 'right') player.x += TILE;
   // clamp and snap
   player.x = Math.max(0, Math.min(cssW - player.size, player.x));
   player.x = Math.round(player.x / TILE) * TILE;
   player.y = Math.max(0, Math.round(player.y / TILE) * TILE);
-  // ensure more lanes ahead
-  ensureLanesUpTo(Math.floor(player.y / TILE) + 60);
+  ensureLanes(Math.floor(player.y / TILE) + 80); // pre-generate far ahead
 }
 
-// on-screen keypad + keyboard
+// keypad and keyboard
 document.querySelectorAll('#keypad .kbtn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const d = btn.dataset.dir || btn.getAttribute('data-dir');
-    if(d === 'reset'){ resetPlayerAndWorld(true); return; }
+    if(d === 'reset'){ initWorld(true); return; }
     movePlayer(d);
   });
 });
@@ -325,47 +310,49 @@ window.addEventListener('keydown', (e)=>{
   if(e.key === 'ArrowDown') movePlayer('down');
   if(e.key === 'ArrowLeft') movePlayer('left');
   if(e.key === 'ArrowRight') movePlayer('right');
-  if(e.key === 'r') resetPlayerAndWorld(true);
+  if(e.key.toLowerCase() === 'r') initWorld(true);
 });
 
 // main loop
 function gameLoop(ts){
-  if(!lastTs) lastTs = ts;
-  const dt = Math.min(50, ts - lastTs);
-  lastTs = ts;
+  if(!lastTS) lastTS = ts;
+  const dt = Math.min(50, ts - lastTS); // ms
+  lastTS = ts;
 
-  // camera follows player
+  // camera follow
   cameraY = player.y - cssH/2;
   if(cameraY < 0) cameraY = 0;
 
   const topIndex = Math.floor(cameraY / TILE);
-  const rowsVisible = Math.ceil(cssH / TILE) + 4;
-  ensureLanesUpTo(topIndex + rowsVisible + 20);
+  const visibleRows = Math.ceil(cssH / TILE) + 6;
+  ensureLanes(topIndex + visibleRows + 40);
 
-  // update items movement
-  for(let i = topIndex; i <= topIndex + rowsVisible; i++){
+  // update movers
+  for(let i = topIndex; i <= topIndex + visibleRows; i++){
     const lane = lanes[i];
     if(!lane) continue;
     for(const item of lane.items){
-      item.x += item.speed * (dt/1000); // speed is px/sec
-      // wrap around
-      if(item.speed > 0 && item.x > cssW + 200) item.x = -200;
-      if(item.speed < 0 && item.x < -200) item.x = cssW + 200;
+      item.x += (item.speed * (dt/1000)); // px per frame scaled by time
+      // wrap
+      if(item.speed > 0 && item.x > cssW + 300) item.x = -300;
+      if(item.speed < 0 && item.x < -300) item.x = cssW + 300;
     }
   }
 
-  // collision & interaction
-  const playerLane = Math.floor(player.y / TILE);
+  // interaction: find player's lane
+  const pLane = Math.floor(player.y / TILE);
+  const lane = lanes[pLane];
   let died = false;
   player.onLog = false;
 
-  const lane = lanes[playerLane];
   if(lane){
     if(lane.type === 'road'){
       for(const car of lane.items){
-        const carX = Math.round(car.x);
-        if(player.x < carX + (car.w || 40) && player.x + player.size > carX){
-          died = true; break;
+        const cx = Math.round(car.x);
+        const cw = car.w || 40;
+        if(player.x < cx + cw && player.x + player.size > cx){
+          died = true;
+          break;
         }
       }
     } else if(lane.type === 'river'){
@@ -373,9 +360,9 @@ function gameLoop(ts){
         const lx = Math.round(log.x);
         const lw = log.w || 80;
         if(player.x < lx + lw && player.x + player.size > lx){
-          // on log: ride it (move by its speed)
           player.onLog = true;
-          player.x += log.speed * (dt/1000);
+          // move with log in fractional pixels
+          player.x += (log.speed * (dt/1000));
           break;
         }
       }
@@ -384,52 +371,41 @@ function gameLoop(ts){
   }
 
   if(died){
-    // update high and reset player but keep world (infinite)
+    // handle high score and reset player (preserve world)
     if(score > high){ high = score; localStorage.setItem('crossy_high', high); }
-    resetPlayerAndWorld(true); // preserve lanes so world remains infinite
-    lastTs = null;
+    initWorld(true);
+    lastTS = null;
     requestAnimationFrame(gameLoop);
     return;
   }
 
-  // after riding log, snap to nearest tile so player doesn't straddle
+  // keep player x on grid (avoid straddle)
   player.x = Math.max(0, Math.min(cssW - player.size, player.x));
   player.x = Math.round(player.x / TILE) * TILE;
 
   // draw
   ctx.clearRect(0,0,cssW,cssH);
 
-  // draw lanes and items
-  for(let i = topIndex; i <= topIndex + rowsVisible; i++){
+  // visible lanes draw
+  for(let i = topIndex; i <= topIndex + visibleRows; i++){
     const laneObj = lanes[i];
     if(!laneObj) continue;
     const y = Math.round(i * TILE - cameraY);
-    if(laneObj.type === 'safe'){
-      ctx.fillStyle = '#dfffe0'; ctx.fillRect(0,y,cssW,TILE);
-    } else if(laneObj.type === 'grass'){
-      ctx.fillStyle = '#bff0b0'; ctx.fillRect(0,y,cssW,TILE);
-    } else if(laneObj.type === 'road'){
-      ctx.fillStyle = '#666'; ctx.fillRect(0,y,cssW,TILE);
-      for(const car of laneObj.items){
-        ctx.fillStyle = '#d44';
-        ctx.fillRect(Math.round(car.x), y+1, car.w || 40, TILE-2);
-      }
-    } else if(laneObj.type === 'river'){
-      ctx.fillStyle = '#09aaff'; ctx.fillRect(0,y,cssW,TILE);
-      for(const log of laneObj.items){
-        ctx.fillStyle = '#8b5a2b';
-        ctx.fillRect(Math.round(log.x), y+1, log.w || 80, TILE-2);
-      }
-    }
+    if(laneObj.type === 'safe'){ ctx.fillStyle = '#e7ffe8'; ctx.fillRect(0, y, cssW, TILE); }
+    else if(laneObj.type === 'grass'){ ctx.fillStyle = '#bff0b0'; ctx.fillRect(0, y, cssW, TILE); }
+    else if(laneObj.type === 'road'){ ctx.fillStyle = '#666'; ctx.fillRect(0, y, cssW, TILE);
+      for(const car of laneObj.items){ ctx.fillStyle = '#d44'; ctx.fillRect(Math.round(car.x), y+1, car.w || 40, TILE-2); } }
+    else if(laneObj.type === 'river'){ ctx.fillStyle = '#09aaff'; ctx.fillRect(0, y, cssW, TILE);
+      for(const log of laneObj.items){ ctx.fillStyle = '#8b5a2b'; ctx.fillRect(Math.round(log.x), y+1, log.w || 80, TILE-2); } }
   }
 
-  // draw player (relative to camera)
+  // draw player
   ctx.fillStyle = '#ffd400';
   const drawX = Math.round(player.x);
   const drawY = Math.round(player.y - cameraY);
   ctx.fillRect(drawX, drawY, player.size, player.size);
 
-  // scoring: base line is start lane 26
+  // update score: base line is start lane index 26
   const startBase = 26;
   score = Math.max(0, Math.floor(player.y / TILE) - startBase);
   document.getElementById('scoreboard').innerHTML = `Score: ${score}<br>High: ${high}`;
@@ -437,14 +413,10 @@ function gameLoop(ts){
   requestAnimationFrame(gameLoop);
 }
 
-// ensure canvas fits right away
-function startGame(){
-  dpr = window.devicePixelRatio || 1;
-  fitCanvas();
-  resetPlayerAndWorld(true);
-  requestAnimationFrame(gameLoop);
-}
-startGame();
+// start everything
+fitCanvas();
+initWorld(true);
+requestAnimationFrame(gameLoop);
 
 </script>
 </body>
