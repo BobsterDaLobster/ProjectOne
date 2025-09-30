@@ -7,8 +7,6 @@
   <style>
     body {font-family: Arial, sans-serif;background: linear-gradient(to right, #add8e6, #ffd580);margin:0;padding:0;color:#333;}
     header {text-align:center;padding:1rem;background:#87cefa;color:white;}
-    nav {text-align:center;margin:1rem;}
-    nav a {margin:0 10px;text-decoration:none;color:#333;font-weight:bold;}
     section {padding:1rem;}
     .calendar-container {display:flex;}
     .calendar {flex:2;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
@@ -51,16 +49,6 @@
   </section>
 
   <section>
-    <h2>Sports News (via ESPN)</h2>
-    <p><a href="https://www.espn.com" target="_blank">Go to ESPN for latest sports news & highlights</a></p>
-  </section>
-
-  <section>
-    <h2>Notre Dame Fighting Irish Football</h2>
-    <p><a href="https://www.espn.com/college-football/team/_/id/87/notre-dame-fighting-irish" target="_blank">Notre Dame Football on ESPN</a></p>
-  </section>
-
-  <section>
     <h2>World News</h2>
     <div id="news" class="news-section"></div>
   </section>
@@ -74,7 +62,7 @@
   <button class="secret-button" onclick="redirectSecret()"></button>
 
   <script>
-    // ==== Calendar Logic (unchanged) ====
+    // ==== Calendar ====
     const calendarEl=document.getElementById('calendar');
     const monthYearEl=document.getElementById('monthYear');
     const selectedDateEl=document.getElementById('selectedDate');
@@ -90,38 +78,35 @@
     function nextMonth(){currentDate.setMonth(currentDate.getMonth()+1);renderCalendar()}
     renderCalendar();
 
-    // ==== News Fetch ====
+    // ==== News ====
     async function fetchNews(){try{const r=await fetch("https://newsapi.org/v2/top-headlines?language=en&apiKey=demo");const d=await r.json();const c=document.getElementById("news");c.innerHTML="";d.articles.slice(0,6).forEach(a=>{const div=document.createElement("div");div.className="news-article";div.innerHTML=`<h4><a href="${a.url}" target="_blank">${a.title}</a></h4><img src="${a.urlToImage||''}" alt="" style="max-width:100%"><p>${a.description||''}</p>`;c.appendChild(div)})}catch(e){console.error("News fetch error",e)}}
     fetchNews();setInterval(fetchNews,1800000);
 
     // ==== Secret Redirect ====
     function redirectSecret(){const code=prompt("Enter secret code:");if(code==="494849"){window.location.href="https://poki.com"}}
 
-    // ==== Crossy Road Game ====
+    // ==== Crossy Road Clone ====
     const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
     const TILE=20;let lanes=[],player=null,cameraY=0,last=null,score=0,high=+localStorage.getItem('highscore')||0;
-    function makeLane(i){if(i%10===0)return{type:'safe',items:[]};let r=Math.random();if(r<0.4){let sp=(Math.random()*.5+.4)*(Math.random()<.5?1:-1);let items=[];for(let j=0;j<3;j++)items.push({x:Math.random()*canvas.width,w:80,speed:sp});return{type:'river',items}}else if(r<0.75){let sp=(Math.random()*.6+.6)*(Math.random()<.5?1:-1);let items=[];for(let j=0;j<3;j++)items.push({x:Math.random()*canvas.width,w:40,speed:sp});return{type:'road',items}}else{return{type:'grass',items:[]}}}
+    function makeLane(i){if(i<5||i%12===0)return{type:'safe',items:[]};let r=Math.random();if(r<0.35){let sp=(Math.random()*.5+.3)*(Math.random()<.5?1:-1);let items=[{x:Math.random()*canvas.width,w:80,speed:sp}];return{type:'river',items}}else if(r<0.7){let sp=(Math.random()*.6+.5)*(Math.random()<.5?1:-1);let items=[{x:Math.random()*canvas.width,w:40,speed:sp}];return{type:'road',items}}else{return{type:'grass',items:[]}}}
     function ensure(n){while(lanes.length<=n)lanes.push(makeLane(lanes.length))}
-    function init(){lanes=[];ensure(40);player={x:200,y:26*TILE,size:TILE};cameraY=Math.max(0,player.y-canvas.height/2);score=0;last=null;}
+    function init(){lanes=[];player={x:200,y:26*TILE,size:TILE};cameraY=0;score=0;last=null;ensure(40);}
     function move(d){if(!player)return;if(d==='up')player.y-=TILE;if(d==='down')player.y+=TILE;if(d==='left')player.x-=TILE;if(d==='right')player.x+=TILE;player.x=Math.max(0,Math.min(canvas.width-player.size,player.x));player.x=Math.round(player.x/TILE)*TILE;player.y=Math.round(player.y/TILE)*TILE;ensure(Math.floor(player.y/TILE)+30)}
     window.onkeydown=e=>{if(e.key.startsWith('Arrow'))move(e.key.replace('Arrow','').toLowerCase());if(e.key==='r')init()}
     function loop(t){if(!last)last=t;let dt=t-last;last=t;cameraY=player.y-canvas.height/2;if(cameraY<0)cameraY=0;let top=Math.floor(cameraY/TILE);ensure(top+40);ctx.clearRect(0,0,canvas.width,canvas.height);
-      // Draw lanes
       for(let i=top;i<top+40;i++){let lane=lanes[i],y=i*TILE-cameraY;
         if(lane.type==='safe'){ctx.fillStyle='#ccffcc';ctx.fillRect(0,y,canvas.width,TILE)}
         if(lane.type==='grass'){ctx.fillStyle='#9be29b';ctx.fillRect(0,y,canvas.width,TILE)}
         if(lane.type==='road'){ctx.fillStyle='#666';ctx.fillRect(0,y,canvas.width,TILE);
           lane.items.forEach(c=>{c.x+=c.speed*dt/16;if(c.x>canvas.width+50)c.x=-80;if(c.x<-80)c.x=canvas.width+50;
-            ctx.fillStyle='#d44';ctx.fillRect(c.x,y,40,TILE-2);
+            ctx.fillStyle='#d44';ctx.fillRect(c.x,y,40,TILE);
             if(player.x<c.x+40&&player.x+player.size>c.x&&player.y===i*TILE){if(score>high){high=score;localStorage.setItem('highscore',high)}init();}})}
         if(lane.type==='river'){ctx.fillStyle='#09f';ctx.fillRect(0,y,canvas.width,TILE);
           let onLog=false;lane.items.forEach(l=>{l.x+=l.speed*dt/16;if(l.x>canvas.width+100)l.x=-100;if(l.x<-100)l.x=canvas.width+100;
-            ctx.fillStyle='#964B00';ctx.fillRect(l.x,y,l.w,TILE-2);
+            ctx.fillStyle='#964B00';ctx.fillRect(l.x,y,l.w,TILE);
             if(player.x<l.x+l.w&&player.x+player.size>l.x&&player.y===i*TILE){onLog=true;player.x+=l.speed*dt/16}});
           if(player.y===i*TILE&&!onLog){if(score>high){high=score;localStorage.setItem('highscore',high)}init();}}}
-      // Draw player
       ctx.fillStyle='#ff0';ctx.fillRect(player.x,player.y-cameraY,player.size,player.size);
-      // Score
       score=Math.max(score,Math.floor(player.y/TILE)-26);
       document.getElementById('scoreboard').innerHTML=`Score: ${score}<br>High: ${high}`;
       requestAnimationFrame(loop)}
