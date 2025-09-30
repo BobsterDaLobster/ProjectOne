@@ -88,11 +88,7 @@
 
   <section>
     <h2>World News</h2>
-    <div style="margin-bottom:8px"><strong>Sections:</strong> Science • National Politics • International Politics • Sports</div>
-    <div>
-      <h4>Top headlines</h4>
-      <div id="newsGrid" class="news-grid"></div>
-    </div>
+    <div id="newsGrid" class="news-grid"></div>
   </section>
 
 </main>
@@ -159,7 +155,7 @@ function prevMonth(){ calDate.setMonth(calDate.getMonth()-1); renderCalendar(); 
 function nextMonth(){ calDate.setMonth(calDate.getMonth()+1); renderCalendar(); }
 renderCalendar();
 
-/* ---------------- News (Google News via AllOrigins) ---------------- */
+/* ---------------- News ---------------- */
 async function fetchTopHeadlines(){
   try{
     const proxy = 'https://api.allorigins.win/get?url=';
@@ -172,17 +168,14 @@ async function fetchTopHeadlines(){
     newsGrid.innerHTML = '';
     for(let i=0;i<6 && i<items.length; i++){
       const it = items[i];
-      const title = it.querySelector('title') ? it.querySelector('title').textContent : 'No title';
-      const link = it.querySelector('link') ? it.querySelector('link').textContent : '#';
-      const descNode = it.querySelector('description');
-      const desc = descNode ? descNode.textContent.replace(/<\/?[^>]+(>|$)/g,"") : '';
+      const title = it.querySelector('title')?.textContent || 'No title';
+      const link = it.querySelector('link')?.textContent || '#';
+      const desc = it.querySelector('description')?.textContent.replace(/<\/?[^>]+(>|$)/g,"") || '';
       const div = document.createElement('div'); div.className='article';
-      div.innerHTML = `<h4 style="margin:6px 0"><a href="${link}" target="_blank" rel="noopener">${title}</a></h4><p>${desc.length>200?desc.slice(0,200)+'...':desc}</p>`;
+      div.innerHTML = `<h4><a href="${link}" target="_blank" rel="noopener">${title}</a></h4><p>${desc.slice(0,150)}...</p>`;
       newsGrid.appendChild(div);
     }
-  }catch(e){
-    console.error('News error', e);
-  }
+  }catch(e){console.error(e);}
 }
 fetchTopHeadlines();
 setInterval(fetchTopHeadlines, 30*60*1000);
@@ -193,231 +186,52 @@ document.getElementById('secretArea').addEventListener('click', ()=>{
   if(code === '494849') window.location.href = 'https://poki.com';
 });
 
-/* ---------------- Infinite Crossy Road Game ---------------- */
+/* ---------------- Infinite Crossy Road ---------------- */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
-let dpr = window.devicePixelRatio || 1;
-let cssW = 0, cssH = 0;
-const TILE = 20;
-const SAFE_EVERY = 10;      // safe zone every 10 lanes
-const INITIAL_GENERATE = 80; // initial lanes to generate
-
-let lanes = [];    // lanes[0] bottom-most lane index 0
-let player = null; // { x, y, size }
-let cameraY = 0;
-let lastTS = null;
-let score = 0;
-let high = +localStorage.getItem('crossy_high') || 0;
-
-// fit canvas to CSS size and set transform so we draw in CSS px
-function fitCanvas(){
-  const rect = canvas.getBoundingClientRect();
-  cssW = rect.width;
-  cssH = rect.height;
-  dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.round(cssW * dpr);
-  canvas.height = Math.round(cssH * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+let TILE=20, SAFE=10, lanes=[],player,cameraY=0,last,score=0,high=+localStorage.getItem('hi')||0;
+function fit(){canvas.width=canvas.clientWidth;canvas.height=canvas.clientHeight}
+window.onresize=fit;fit();
+function makeLane(i){
+  if(i%SAFE===0) return {t:'safe',it:[]};
+  let r=Math.random();
+  if(r<.4){let sp=(Math.random()*60+30)*(Math.random()<.5?1:-1);
+    let it=[];for(let j=0;j<3;j++)it.push({x:Math.random()*canvas.width,w:80,s:sp});
+    return {t:'river',it};
+  } else if(r<.75){let sp=(Math.random()*80+40)*(Math.random()<.5?1:-1);
+    let it=[];for(let j=0;j<3;j++)it.push({x:Math.random()*canvas.width,w:40,s:sp});
+    return {t:'road',it};
+  } else return {t:'grass',it:[]};
 }
-window.addEventListener('resize', ()=>{
-  fitCanvas();
-  // clamp player.x if needed
-  if(player) player.x = Math.max(0, Math.min(cssW - player.size, player.x));
-});
-fitCanvas();
-
-// lane creation: increased river chance, randomized positions to avoid vertical alignment
-function makeLane(idx){
-  if(idx % SAFE_EVERY === 0) return { type:'safe', items:[] };
-  const r = Math.random();
-  // more rivers: ~40%
-  if(r < 0.40){
-    const count = 2 + Math.floor(Math.random()*3); // 2..4 logs
-    const baseSpeed = (Math.random()*60 + 30) * (Math.random()<0.5 ? 1 : -1); // px/sec
-    const items = [];
-    const gap = Math.max(120, Math.floor(cssW / count));
-    for(let i=0;i<count;i++){
-      const jitter = (Math.random() - 0.5) * gap * 0.6;
-      const x = (i * gap) + jitter + (Math.random()*60 - 30);
-      items.push({ x: x, w: 80, speed: baseSpeed });
-    }
-    return { type:'river', items, baseSpeed };
-  } else if(r < 0.75){
-    // road ~35%
-    const count = 2 + Math.floor(Math.random()*3); // 2..4 cars
-    const baseSpeed = (Math.random()*80 + 40) * (Math.random()<0.5 ? 1 : -1);
-    const items = [];
-    const gap = Math.max(120, Math.floor(cssW / count));
-    for(let i=0;i<count;i++){
-      const jitter = (Math.random() - 0.5) * gap * 0.6;
-      const x = (i * gap) + jitter + (Math.random()*80 - 40);
-      items.push({ x: x, w: 40, speed: baseSpeed });
-    }
-    return { type:'road', items, baseSpeed };
-  } else {
-    return { type:'grass', items:[] };
-  }
-}
-
-// ensure lanes exist up to index n
-function ensureLanes(n){
-  while(lanes.length <= n) lanes.push(makeLane(lanes.length));
-}
-
-// init world & player
-function initWorld(preserveLanes = true){
-  if(!preserveLanes) lanes = [];
-  ensureLanes(INITIAL_GENERATE);
-  // place player at bottom safe area (lane ~26)
-  const startLane = 26;
-  player = {
-    x: Math.floor((cssW/2) / TILE) * TILE,
-    y: startLane * TILE,
-    size: TILE,
-    onLog: false
-  };
-  cameraY = Math.max(0, player.y - cssH/2);
-  lastTS = null;
-  score = 0;
-}
-initWorld(true);
-
-// move player snapped to tiles
-function movePlayer(dir){
-  if(!player) return;
-  if(dir === 'up') player.y -= TILE;
-  else if(dir === 'down') player.y += TILE;
-  else if(dir === 'left') player.x -= TILE;
-  else if(dir === 'right') player.x += TILE;
-  // clamp and snap
-  player.x = Math.max(0, Math.min(cssW - player.size, player.x));
-  player.x = Math.round(player.x / TILE) * TILE;
-  player.y = Math.max(0, Math.round(player.y / TILE) * TILE);
-  ensureLanes(Math.floor(player.y / TILE) + 80); // pre-generate far ahead
-}
-
-// keypad and keyboard
-document.querySelectorAll('#keypad .kbtn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const d = btn.dataset.dir || btn.getAttribute('data-dir');
-    if(d === 'reset'){ initWorld(true); return; }
-    movePlayer(d);
-  });
-});
-window.addEventListener('keydown', (e)=>{
-  if(e.key === 'ArrowUp') movePlayer('up');
-  if(e.key === 'ArrowDown') movePlayer('down');
-  if(e.key === 'ArrowLeft') movePlayer('left');
-  if(e.key === 'ArrowRight') movePlayer('right');
-  if(e.key.toLowerCase() === 'r') initWorld(true);
-});
-
-// main loop
-function gameLoop(ts){
-  if(!lastTS) lastTS = ts;
-  const dt = Math.min(50, ts - lastTS); // ms
-  lastTS = ts;
-
-  // camera follow
-  cameraY = player.y - cssH/2;
-  if(cameraY < 0) cameraY = 0;
-
-  const topIndex = Math.floor(cameraY / TILE);
-  const visibleRows = Math.ceil(cssH / TILE) + 6;
-  ensureLanes(topIndex + visibleRows + 40);
-
-  // update movers
-  for(let i = topIndex; i <= topIndex + visibleRows; i++){
-    const lane = lanes[i];
-    if(!lane) continue;
-    for(const item of lane.items){
-      item.x += (item.speed * (dt/1000)); // px per frame scaled by time
-      // wrap
-      if(item.speed > 0 && item.x > cssW + 300) item.x = -300;
-      if(item.speed < 0 && item.x < -300) item.x = cssW + 300;
-    }
-  }
-
-  // interaction: find player's lane
-  const pLane = Math.floor(player.y / TILE);
-  const lane = lanes[pLane];
-  let died = false;
-  player.onLog = false;
-
-  if(lane){
-    if(lane.type === 'road'){
-      for(const car of lane.items){
-        const cx = Math.round(car.x);
-        const cw = car.w || 40;
-        if(player.x < cx + cw && player.x + player.size > cx){
-          died = true;
-          break;
-        }
-      }
-    } else if(lane.type === 'river'){
-      for(const log of lane.items){
-        const lx = Math.round(log.x);
-        const lw = log.w || 80;
-        if(player.x < lx + lw && player.x + player.size > lx){
-          player.onLog = true;
-          // move with log in fractional pixels
-          player.x += (log.speed * (dt/1000));
-          break;
-        }
-      }
-      if(!player.onLog) died = true;
-    }
-  }
-
-  if(died){
-    // handle high score and reset player (preserve world)
-    if(score > high){ high = score; localStorage.setItem('crossy_high', high); }
-    initWorld(true);
-    lastTS = null;
-    requestAnimationFrame(gameLoop);
-    return;
-  }
-
-  // keep player x on grid (avoid straddle)
-  player.x = Math.max(0, Math.min(cssW - player.size, player.x));
-  player.x = Math.round(player.x / TILE) * TILE;
-
-  // draw
-  ctx.clearRect(0,0,cssW,cssH);
-
-  // visible lanes draw
-  for(let i = topIndex; i <= topIndex + visibleRows; i++){
-    const laneObj = lanes[i];
-    if(!laneObj) continue;
-    const y = Math.round(i * TILE - cameraY);
-    if(laneObj.type === 'safe'){ ctx.fillStyle = '#e7ffe8'; ctx.fillRect(0, y, cssW, TILE); }
-    else if(laneObj.type === 'grass'){ ctx.fillStyle = '#bff0b0'; ctx.fillRect(0, y, cssW, TILE); }
-    else if(laneObj.type === 'road'){ ctx.fillStyle = '#666'; ctx.fillRect(0, y, cssW, TILE);
-      for(const car of laneObj.items){ ctx.fillStyle = '#d44'; ctx.fillRect(Math.round(car.x), y+1, car.w || 40, TILE-2); } }
-    else if(laneObj.type === 'river'){ ctx.fillStyle = '#09aaff'; ctx.fillRect(0, y, cssW, TILE);
-      for(const log of laneObj.items){ ctx.fillStyle = '#8b5a2b'; ctx.fillRect(Math.round(log.x), y+1, log.w || 80, TILE-2); } }
-  }
-
-  // draw player
-  ctx.fillStyle = '#ffd400';
-  const drawX = Math.round(player.x);
-  const drawY = Math.round(player.y - cameraY);
-  ctx.fillRect(drawX, drawY, player.size, player.size);
-
-  // update score: base line is start lane index 26
-  const startBase = 26;
-  score = Math.max(0, Math.floor(player.y / TILE) - startBase);
-  document.getElementById('scoreboard').innerHTML = `Score: ${score}<br>High: ${high}`;
-
-  requestAnimationFrame(gameLoop);
-}
-
-// start everything
-fitCanvas();
-initWorld(true);
-requestAnimationFrame(gameLoop);
-
+function ensure(n){while(lanes.length<=n)lanes.push(makeLane(lanes.length))}
+function init(){lanes=[];ensure(50);player={x:Math.floor(canvas.width/2/TILE)*TILE,y:26*TILE,s:TILE};cameraY=0;score=0}
+init();
+function move(d){if(!player)return;
+  if(d==='up')player.y-=TILE;if(d==='down')player.y+=TILE;if(d==='left')player.x-=TILE;if(d==='right')player.x+=TILE;
+  player.x=Math.max(0,Math.min(canvas.width-player.s,player.x));
+  player.x=Math.round(player.x/TILE)*TILE;player.y=Math.round(player.y/TILE)*TILE;ensure(Math.floor(player.y/TILE)+30)}
+document.querySelectorAll('.kbtn').forEach(b=>b.onclick=()=>{let d=b.dataset.dir;if(d==='reset')init();else move(d)});
+window.onkeydown=e=>{if(e.key.startsWith('Arrow'))move(e.key.replace('Arrow','').toLowerCase());if(e.key==='r')init()};
+function loop(t){if(!last)last=t;let dt=t-last;last=t;cameraY=player.y-canvas.height/2;if(cameraY<0)cameraY=0;
+  let top=Math.floor(cameraY/TILE);ensure(top+40);ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let i=top;i<top+40;i++){let L=lanes[i],y=i*TILE-cameraY;
+    if(L.t==='safe'){ctx.fillStyle='#e7ffe8';ctx.fillRect(0,y,canvas.width,TILE)}
+    if(L.t==='grass'){ctx.fillStyle='#bff0b0';ctx.fillRect(0,y,canvas.width,TILE)}
+    if(L.t==='road'){ctx.fillStyle='#666';ctx.fillRect(0,y,canvas.width,TILE);
+      L.it.forEach(c=>{c.x+=c.s*dt/16;if(c.x>canvas.width+50)c.x=-80;if(c.x<-80)c.x=canvas.width+50;
+        ctx.fillStyle='#d44';ctx.fillRect(c.x,y,40,TILE-2)})}
+    if(L.t==='river'){ctx.fillStyle='#09f';ctx.fillRect(0,y,canvas.width,TILE);
+      L.it.forEach(l=>{l.x+=l.s*dt/16;if(l.x>canvas.width+100)l.x=-100;if(l.x<-100)l.x=canvas.width+100;
+        ctx.fillStyle='#964B00';ctx.fillRect(l.x,y,l.w,TILE-2)})}}
+  let li=Math.floor(player.y/TILE),L=lanes[li],dead=false,onLog=false;
+  if(L){if(L.t==='road')for(let c of L.it)if(player.x<c.x+40&&player.x+player.s>c.x)dead=true;
+    if(L.t==='river'){for(let l of L.it)if(player.x<l.x+l.w&&player.x+player.s>l.x){onLog=true;player.x+=l.s*dt/16;break}if(!onLog)dead=true}}
+  if(dead){if(score>high){high=score;localStorage.setItem('hi',high)}init()}
+  ctx.fillStyle='#ff0';ctx.fillRect(player.x,player.y-cameraY,player.s,player.s);
+  score=Math.max(score,Math.floor(player.y/TILE)-26);
+  document.getElementById('scoreboard').innerHTML=`Score: ${score}<br>High: ${high}`;
+  requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
