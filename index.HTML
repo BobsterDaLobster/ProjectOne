@@ -22,7 +22,8 @@
   /* Game */
   #gameWrap{position:relative;max-width:760px;margin:0 auto}
   canvas{display:block;width:100%;height:auto;border:3px solid var(--dark);background:#e9f7ff;border-radius:6px}
-  /* keypad overlay inside container (positioned relative to canvas) */
+  #scoreboard{position:absolute;top:8px;left:8px;background:rgba(255,255,255,.8);padding:6px 10px;border-radius:6px;font-weight:bold}
+  /* keypad overlay */
   #keypad{position:absolute;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(3,44px);gap:6px;pointer-events:none}
   .kbtn{width:44px;height:40px;border-radius:6px;background:var(--accent);border:none;color:#fff;font-weight:700;cursor:pointer;pointer-events:auto;box-shadow:0 2px 4px rgba(0,0,0,.12)}
   /* News */
@@ -38,13 +39,11 @@
 <header><h1>My Personal Profile</h1></header>
 <main>
 
-  <!-- Resume (placeholder) -->
   <section>
     <h2>My Resume</h2>
-    <p>Paste your resume here (this demo keeps the area as editable text in future updates).</p>
+    <p>Paste your resume here.</p>
   </section>
 
-  <!-- Calendar -->
   <section>
     <h2>Calendar</h2>
     <div class="calendar-wrap">
@@ -65,11 +64,11 @@
     </div>
   </section>
 
-  <!-- Game -->
   <section>
     <h2>Mini-Game: Infinite Crossy Road</h2>
     <div id="gameWrap">
       <canvas id="gameCanvas" width="760" height="520"></canvas>
+      <div id="scoreboard">Score: 0<br>High: 0</div>
       <div id="keypad">
         <button class="kbtn" data-dir="up">⬆</button>
         <button class="kbtn" data-dir="left">⬅</button>
@@ -77,11 +76,9 @@
         <button class="kbtn" data-dir="right">➡</button>
         <button class="kbtn" data-dir="reset">⟲</button>
       </div>
-      <div style="text-align:center;margin-top:8px;font-size:0.95rem">Use on-screen keys or your keyboard arrows. Score shown in corner.</div>
     </div>
   </section>
 
-  <!-- Sports / Notre Dame / World News -->
   <section>
     <h2>Sports (ESPN)</h2>
     <p class="smalllink"><a href="https://www.espn.com" target="_blank">Open ESPN</a></p>
@@ -94,7 +91,6 @@
 
   <section>
     <h2>World News</h2>
-    <div style="margin-bottom:8px"><strong>Sections:</strong> Science • National Politics • International Politics • Sports</div>
     <div id="newsContainers">
       <h3>Science</h3><div class="news-grid" id="scienceNews"></div>
       <h3>National Politics</h3><div class="news-grid" id="nationalNews"></div>
@@ -104,403 +100,56 @@
   </section>
 
 </main>
-
 <div class="secret" id="secretArea" title="Secret"></div>
 
 <script>
-/* ================= Calendar (unchanged behavior) ================= */
-const calendarGrid = document.getElementById('calendarGrid');
-const monthYear = document.getElementById('monthYear');
-const eventList = document.getElementById('eventList');
-const newEventInput = document.getElementById('newEventInput');
-
-let calDate = new Date();
-let storedEvents = JSON.parse(localStorage.getItem('profile_events')||'{}');
-
+/* === Calendar === */
+const calendarGrid=document.getElementById('calendarGrid');
+const monthYear=document.getElementById('monthYear');
+const eventList=document.getElementById('eventList');
+const newEventInput=document.getElementById('newEventInput');
+let calDate=new Date();
+let storedEvents=JSON.parse(localStorage.getItem('profile_events')||'{}');
 function renderCalendar(){
   calendarGrid.innerHTML='';
-  const year = calDate.getFullYear(), month = calDate.getMonth();
-  monthYear.textContent = calDate.toLocaleString('default',{month:'long', year:'numeric'});
-  const firstDay = new Date(year,month,1).getDay();
-  const daysInMonth = new Date(year,month+1,0).getDate();
-  // headings
-  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{
-    const el=document.createElement('div'); el.style.fontWeight='700'; el.textContent=d; calendarGrid.appendChild(el);
-  });
-  for(let i=0;i<firstDay;i++) calendarGrid.appendChild(document.createElement('div'));
-  for(let d=1; d<=daysInMonth; d++){
-    const el=document.createElement('div'); el.className='day';
-    const isToday = d===new Date().getDate() && month===new Date().getMonth() && year===new Date().getFullYear();
-    if(isToday) el.classList.add('today');
-    el.textContent=d;
-    el.onclick = ()=> selectDay(year,month,d);
-    calendarGrid.appendChild(el);
-  }
-}
-function dayKey(y,m,d){ return `${y}-${m}-${d}`; }
-function selectDay(y,m,d){
-  const key = dayKey(y,m,d);
-  document.getElementById('selectedDate').textContent = new Date(y,m,d).toDateString();
-  eventList.innerHTML='';
-  (storedEvents[key]||[]).forEach((ev,i)=>{
-    const li=document.createElement('li'); li.textContent=ev;
-    const del=document.createElement('button'); del.textContent='X'; del.style.marginLeft='8px';
-    del.onclick = ()=>{ storedEvents[key].splice(i,1); localStorage.setItem('profile_events',JSON.stringify(storedEvents)); selectDay(y,m,d); };
-    li.appendChild(del); eventList.appendChild(li);
-  });
-  newEventInput.dataset.key = key;
-}
-function addEvent(){
-  const key = newEventInput.dataset.key;
-  if(!key) return alert('Select a day first');
-  if(!storedEvents[key]) storedEvents[key]=[];
-  if(newEventInput.value.trim()==='') return;
-  storedEvents[key].push(newEventInput.value.trim());
-  localStorage.setItem('profile_events',JSON.stringify(storedEvents));
-  const [yy,mm,dd] = key.split('-').map(Number);
-  selectDay(yy,mm,dd);
-  newEventInput.value='';
-}
-function prevMonth(){ calDate.setMonth(calDate.getMonth()-1); renderCalendar(); }
-function nextMonth(){ calDate.setMonth(calDate.getMonth()+1); renderCalendar(); }
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  monthYear.textContent=calDate.toLocaleString('default',{month:'long',year:'numeric'});
+  const fd=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{let el=document.createElement('div');el.style.fontWeight='700';el.textContent=d;calendarGrid.appendChild(el)});
+  for(let i=0;i<fd;i++)calendarGrid.appendChild(document.createElement('div'));
+  for(let d=1;d<=dim;d++){let el=document.createElement('div');el.className='day';if(d===new Date().getDate()&&m===new Date().getMonth()&&y===new Date().getFullYear())el.classList.add('today');el.textContent=d;el.onclick=()=>selectDay(y,m,d);calendarGrid.appendChild(el)}}
+function dayKey(y,m,d){return `${y}-${m}-${d}`}
+function selectDay(y,m,d){let k=dayKey(y,m,d);document.getElementById('selectedDate').textContent=new Date(y,m,d).toDateString();eventList.innerHTML='';(storedEvents[k]||[]).forEach((ev,i)=>{let li=document.createElement('li');li.textContent=ev;let del=document.createElement('button');del.textContent='X';del.onclick=()=>{storedEvents[k].splice(i,1);localStorage.setItem('profile_events',JSON.stringify(storedEvents));selectDay(y,m,d)};li.appendChild(del);eventList.appendChild(li)});newEventInput.dataset.key=k}
+function addEvent(){let k=newEventInput.dataset.key;if(!k)return; if(!storedEvents[k])storedEvents[k]=[]; if(!newEventInput.value.trim())return; storedEvents[k].push(newEventInput.value.trim());localStorage.setItem('profile_events',JSON.stringify(storedEvents));let [yy,mm,dd]=k.split('-').map(Number);selectDay(yy,mm,dd);newEventInput.value=''}
+function prevMonth(){calDate.setMonth(calDate.getMonth()-1);renderCalendar()}
+function nextMonth(){calDate.setMonth(calDate.getMonth()+1);renderCalendar()}
 renderCalendar();
 
-/* ================= News (RSS -> AllOrigins proxy) ================= */
-async function loadRSSInto(rssUrl, containerId, max=5){
-  try{
-    const res = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(rssUrl));
-    const j = await res.json();
-    const xml = (new DOMParser()).parseFromString(j.contents,'text/xml');
-    const items = xml.querySelectorAll('item');
-    const container = document.getElementById(containerId);
-    container.innerHTML='';
-    for(let i=0;i<Math.min(max, items.length); i++){
-      const it = items[i];
-      const title = it.querySelector('title') ? it.querySelector('title').textContent : 'No title';
-      const link = it.querySelector('link') ? it.querySelector('link').textContent : '#';
-      const desc = it.querySelector('description') ? it.querySelector('description').textContent.replace(/<\/?[^>]+(>|$)/g,"") : '';
-      const div = document.createElement('div'); div.className='article';
-      div.innerHTML = `<h4 style="margin:6px 0"><a href="${link}" target="_blank" rel="noopener">${title}</a></h4><p>${desc.length>200?desc.slice(0,200)+'...':desc}</p>`;
-      container.appendChild(div);
-    }
-  }catch(e){ console.error('RSS load error',e); }
-}
-function refreshAllNews(){
-  // ESPN general sports
-  loadRSSInto('https://www.espn.com/espn/rss/news','sportsNews');
-  // Notre Dame (college football feed)
-  loadRSSInto('https://www.espn.com/college-football/team/_/id/87/notre-dame-fighting-irish?isFeed=true','nationalNews'); // fallback placement
-  // Google topics (example feeds) — these are generic topic RSS endpoints
-  loadRSSInto('https://news.google.com/rss/search?q=science&hl=en-US&gl=US&ceid=US:en','scienceNews');
-  loadRSSInto('https://news.google.com/rss/search?q=us+politics&hl=en-US&gl=US&ceid=US:en','nationalNews');
-  loadRSSInto('https://news.google.com/rss/topics/CAAqJggKIiJDQkFTRVFvSUwyMHZNRFp3YlY4U0FtVnVLQUFQAQ?hl=en-US&gl=US&ceid=US:en','internationalNews');
-  loadRSSInto('https://www.espn.com/espn/rss/news','sportsNews');
-}
-refreshAllNews();
-setInterval(refreshAllNews, 30*60*1000);
+/* === News === */
+async function loadRSS(rss,id,max=5){try{let r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(rss));let j=await r.json();let xml=new DOMParser().parseFromString(j.contents,'text/xml');let items=xml.querySelectorAll('item');let c=document.getElementById(id);c.innerHTML='';for(let i=0;i<Math.min(max,items.length);i++){let it=items[i];let t=it.querySelector('title')?.textContent||'';let l=it.querySelector('link')?.textContent||'#';let d=it.querySelector('description')?.textContent.replace(/<\/?[^>]+(>|$)/g,"")||'';let div=document.createElement('div');div.className='article';div.innerHTML=`<h4><a href="${l}" target="_blank">${t}</a></h4><p>${d.slice(0,200)}...</p>`;c.appendChild(div)}}catch(e){console.log(e)}}
+function refreshNews(){loadRSS('https://news.google.com/rss/search?q=science&hl=en-US&gl=US&ceid=US:en','scienceNews');loadRSS('https://news.google.com/rss/search?q=us+politics&hl=en-US&gl=US&ceid=US:en','nationalNews');loadRSS('https://news.google.com/rss/topics/CAAqJggKIiJDQkFTRVFvSUwyMHZNRFp3YlY4U0FtVnVLQUFQAQ?hl=en-US&gl=US&ceid=US:en','internationalNews');loadRSS('https://www.espn.com/espn/rss/news','sportsNews')}
+refreshNews();setInterval(refreshNews,30*60*1000);
 
-/* ================= Secret redirect ================= */
-document.getElementById('secretArea')?.addEventListener('click', ()=>{
-  const code = prompt('Enter secret code:');
-  if(code === '494849') window.location.href = 'https://poki.com';
-});
+/* === Secret === */
+document.getElementById('secretArea').onclick=()=>{if(prompt('Enter secret code:')==='494849')window.location.href='https://poki.com'}
 
-/* ================= Infinite Crossy Road Game ================= */
-/* Implementation notes:
-   - TILE = 20 px tile height
-   - canvas is DPI-scaled for crisp rendering
-   - lanes[] is an array of lane objects; we generate lanes dynamically as player moves forward
-   - spawn positions per-lane are randomized, not deterministic columns; that avoids vertical column alignment
-   - per-lane baseSpeed and spawn spacing are set once at creation so they don't grow on reset
-*/
-
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-// DPI/backing scale so CSS size maps to drawing coordinates nicely
-function fitCanvasToDisplaySize(){
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = Math.round(rect.width * dpr);
-  canvas.height = Math.round(rect.height * dpr);
-  // use transform so drawing uses CSS px coordinates
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-}
-window.addEventListener('resize', fitCanvasToDisplaySize);
-fitCanvasToDisplaySize();
-
-const TILE_PX = 20; // visual size in CSS px
-let lanes = [];     // infinite lanes: lanes[0] is bottom-most lane (index 0 = bottom)
-let player = null;
-let cameraY = 0;    // camera offset (world Y of top-of-canvas)
-let lastTime = null;
-let score = 0;
-
-// lane factory: creates lane object with stable properties
-function makeLane(index){
-  // index = integer, 0 = bottom-most initial lane; higher = further forward/up
-  if(index % 10 === 0) return { type:'safe', items:[], baseSpeed:0 }; // safe zone every 10
-  const r = Math.random();
-  if(r < 0.40){
-    // road lane
-    const baseSpeed = (Math.random()*0.6 + 0.6) * (Math.random()<0.5 ? 1 : -1); // px/frame-equivalent
-    // create a few cars with randomized x positions (avoid lining up with other lanes)
-    const cars = [];
-    const count = 2 + Math.floor(Math.random()*3); // 2..4 cars
-    for(let i=0;i<count;i++){
-      const gap = Math.floor(canvas.width / count);
-      const jitter = Math.floor(Math.random() * gap * 0.6);
-      const x = (i*gap + jitter) * (baseSpeed>0 ? -1 : 1) + Math.random()*50; // vary start side
-      cars.push({ x: x, w: 40, speed: baseSpeed });
-    }
-    return { type:'road', items:cars, baseSpeed };
-  } else if(r < 0.65){
-    // river lane
-    const baseSpeed = (Math.random()*0.5 + 0.4) * (Math.random()<0.5 ? 1 : -1);
-    const logs = [];
-    const count = 2 + Math.floor(Math.random()*2); // 2..3 logs
-    for(let i=0;i<count;i++){
-      const gap = Math.floor(canvas.width / count);
-      const jitter = Math.floor(Math.random() * gap * 0.6);
-      const x = (i*gap + jitter) * (baseSpeed>0 ? -1 : 1) + Math.random()*60;
-      logs.push({ x: x, w: 80, speed: baseSpeed });
-    }
-    return { type:'river', items:logs, baseSpeed };
-  } else {
-    // grass
-    return { type:'grass', items:[], baseSpeed:0 };
-  }
-}
-
-// ensure we have enough lanes ahead of the player — infinite generation
-function ensureLanesUpTo(targetIndex){
-  while(lanes.length <= targetIndex){
-    lanes.push(makeLane(lanes.length));
-  }
-}
-
-// init player and lanes
-function initGame(){
-  lanes = [];
-  // create a bunch of initial lanes (bottom to top)
-  for(let i=0;i<40;i++) lanes.push(makeLane(i));
-  // player starts horizontally centered and near bottom safe zone
-  const cssW = canvas.getBoundingClientRect().width;
-  const startX = Math.floor((cssW/2) / TILE_PX) * TILE_PX;
-  const startY = (TILE_PX * 26); // near bottom area
-  player = { x: startX, y: startY, size: TILE_PX, onLog:false };
-  cameraY = Math.max(0, player.y - canvas.getBoundingClientRect().height/2);
-  score = 0;
-  lastTime = null;
-}
-
-// helper to move player and snap to grid
-function playerMove(dir){
-  if(!player) return;
-  if(dir === 'up') player.y -= TILE_PX;
-  if(dir === 'down') player.y += TILE_PX;
-  if(dir === 'left') player.x -= TILE_PX;
-  if(dir === 'right') player.x += TILE_PX;
-  // clamp horizontally
-  const cssW = canvas.getBoundingClientRect().width;
-  player.x = Math.max(0, Math.min(cssW - player.size, player.x));
-  // snap to grid
-  player.x = Math.round(player.x / TILE_PX) * TILE_PX;
-  player.y = Math.round(player.y / TILE_PX) * TILE_PX;
-  // when player moves near top area of screen, we effectively advance world forward: increase lanes if needed
-  const laneIndex = Math.floor(player.y / TILE_PX);
-  ensureLanesUpTo(laneIndex + 40);
-}
-
-// input handlers (on-screen keypad)
-document.querySelectorAll('#keypad .kbtn').forEach(btn=>{
-  btn.addEventListener('click', ()=> {
-    const d = btn.dataset.dir || btn.getAttribute('data-dir');
-    if(d === 'reset' || d === '⟲') { initGame(); return; }
-    playerMove(d);
-  });
-});
-// keyboard
-window.addEventListener('keydown', (e)=>{
-  if(e.key === 'ArrowUp') playerMove('up');
-  if(e.key === 'ArrowDown') playerMove('down');
-  if(e.key === 'ArrowLeft') playerMove('left');
-  if(e.key === 'ArrowRight') playerMove('right');
-  if(e.key === 'r') initGame();
-});
-
-// main update/draw loop
-function gameLoop(ts){
-  if(!lastTime) lastTime = ts;
-  const dt = Math.min(40, ts - lastTime); // ms
-  lastTime = ts;
-
-  // update spawns & positions per lane (use dt scaling)
-  // compute camera target so player stays around center
-  const cssH = canvas.getBoundingClientRect().height;
-  cameraY = player.y - cssH/2;
-  if(cameraY < 0) cameraY = 0;
-
-  // determine index range visible
-  const topIndex = Math.floor(cameraY / TILE_PX);
-  const visibleRows = Math.ceil(cssH / TILE_PX) + 2;
-  ensureLanesUpTo(topIndex + visibleRows + 10);
-
-  // clear
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // draw lanes and move items
-  const cssW = canvas.getBoundingClientRect().width;
-  for(let i = topIndex; i <= topIndex + visibleRows; i++){
-    const lane = lanes[i];
-    if(!lane) continue;
-    const yOnCanvas = (i * TILE_PX) - cameraY;
-    // lane background
-    if(lane.type === 'safe' || lane.type === 'grass'){
-      ctx.fillStyle = lane.type==='safe' ? '#ccffcc' : '#9be29b';
-      ctx.fillRect(0, Math.round(yOnCanvas), cssW, TILE_PX);
-    } else if(lane.type === 'road'){
-      ctx.fillStyle = '#6b6b6b';
-      ctx.fillRect(0, Math.round(yOnCanvas), cssW, TILE_PX);
-      // move & draw cars
-      lane.items.forEach(car=>{
-        car.x += car.speed * (dt / 16); // scale with dt
-        // wrap
-        if(car.speed > 0 && car.x > cssW + 60) car.x = -80;
-        if(car.speed < 0 && car.x < -100) car.x = cssW + 60;
-        ctx.fillStyle = '#d44';
-        ctx.fillRect(Math.round(car.x), Math.round(yOnCanvas), car.w || 40, TILE_PX - 2);
-      });
-    } else if(lane.type === 'river'){
-      ctx.fillStyle = '#00aaff';
-      ctx.fillRect(0, Math.round(yOnCanvas), cssW, TILE_PX);
-      // move & draw logs
-      lane.items.forEach(log=>{
-        log.x += log.speed * (dt / 16);
-        if(log.speed > 0 && log.x > cssW + 120) log.x = -200;
-        if(log.speed < 0 && log.x < -200) log.x = cssW + 120;
-        ctx.fillStyle = '#8b5a2b';
-        ctx.fillRect(Math.round(log.x), Math.round(yOnCanvas), log.w || 80, TILE_PX - 2);
-      });
-    }
-
-    // collision / interactions if player's lane
-    // We'll handle player after loop for clarity
-  }
-
-  // player interactions: determine player's lane index and check for collisions
-  const playerLaneIndex = Math.floor(player.y / TILE_PX);
-  const playerLane = lanes[playerLaneIndex];
-  let died = false;
-  player.onLog = false;
-
-  if(playerLane){
-    const laneYOnCanvas = (playerLaneIndex * TILE_PX) - cameraY;
-    if(playerLane.type === 'road'){
-      // check overlap with any car in that lane
-      for(const car of playerLane.items){
-        // use integer comparisons on CSS coords
-        const carX = Math.round(car.x);
-        if(player.x < carX + (car.w || 40) && player.x + player.size > carX && Math.abs(player.y - (playerLaneIndex * TILE_PX)) < 1){
-          died = true;
-          break;
-        }
-      }
-    } else if(playerLane.type === 'river'){
-      // check logs — if on a log, move with log; if not, drown
-      for(const log of playerLane.items){
-        const lx = Math.round(log.x);
-        const lw = log.w || 80;
-        if(player.x < lx + lw && player.x + player.size > lx && Math.abs(player.y - (playerLaneIndex * TILE_PX)) < 1){
-          player.onLog = true;
-          // move player by same amount
-          player.x += log.speed * (dt / 16);
-          break;
-        }
-      }
-      if(!player.onLog){
-        died = true;
-      }
-    }
-  }
-
-  if(died){
-    // reset player (no cumulative speed escalation because lane baseSpeed is static)
-    initGame(); // regenerate lanes and reset player
-    // keep lastTime null so animation delta doesn't spike
-    lastTime = null;
-    requestAnimationFrame(gameLoop);
-    return;
-  }
-
-  // draw player (relative to camera)
-  ctx.fillStyle = '#ffea00';
-  const px = Math.round(player.x);
-  const py = Math.round(player.y - cameraY);
-  ctx.fillRect(px, py, player.size, player.size);
-  // draw score
-  ctx.fillStyle = '#111';
-  ctx.font = '16px sans-serif';
-  ctx.fillText('Score: ' + Math.max(0, Math.floor((player.y - (26*TILE_PX)) / TILE_PX)), 8, 18);
-
-  requestAnimationFrame(gameLoop);
-}
-
-// Initialize and start
-initGame();
-requestAnimationFrame(gameLoop);
-
-/* Helpers: initGame reused for resets */
-function initGame(){
-  // create initial lane chunk (bottom-first)
-  lanes = [];
-  for(let i=0;i<60;i++) lanes.push(makeLane(i));
-  // player centered horizontally (based on CSS width), starting near bottom
-  const cssWidth = canvas.getBoundingClientRect().width;
-  const startX = Math.floor((cssWidth / 2) / TILE_PX) * TILE_PX;
-  player = { x: startX, y: 26 * TILE_PX, size: TILE_PX, onLog:false };
-  cameraY = Math.max(0, player.y - canvas.getBoundingClientRect().height/2);
-  lastTime = null;
-  score = 0;
-}
-
-/* makeLane used earlier, ensure it's available here as well */
-function makeLane(index){
-  if(index % 10 === 0) return { type:'safe', items:[], baseSpeed:0 };
-  const r = Math.random();
-  if(r < 0.40){
-    const baseSpeed = (Math.random()*0.6 + 0.6) * (Math.random()<0.5 ? 1 : -1);
-    const cars = [];
-    const count = 2 + Math.floor(Math.random()*3);
-    for(let i=0;i<count;i++){
-      const gap = Math.max(120, Math.floor(canvas.getBoundingClientRect().width / count));
-      const jitter = Math.floor(Math.random() * gap * 0.6);
-      const sideStart = (baseSpeed>0) ? -Math.random()*200 : Math.random()*200 + canvas.getBoundingClientRect().width;
-      const x = sideStart + i*gap + jitter;
-      cars.push({ x: x, w: 40, speed: baseSpeed });
-    }
-    return { type:'road', items:cars, baseSpeed };
-  } else if(r < 0.65){
-    const baseSpeed = (Math.random()*0.5 + 0.4) * (Math.random()<0.5 ? 1 : -1);
-    const logs = [];
-    const count = 2 + Math.floor(Math.random()*2);
-    for(let i=0;i<count;i++){
-      const gap = Math.max(180, Math.floor(canvas.getBoundingClientRect().width / count));
-      const jitter = Math.floor(Math.random() * gap * 0.6);
-      const sideStart = (baseSpeed>0) ? -Math.random()*300 : Math.random()*300 + canvas.getBoundingClientRect().width;
-      const x = sideStart + i*gap + jitter;
-      logs.push({ x: x, w: 80, speed: baseSpeed });
-    }
-    return { type:'river', items:logs, baseSpeed };
-  } else {
-    return { type:'grass', items:[], baseSpeed:0 };
-  }
-}
-
-/* Keep canvas fit initially in case CSS changed due to responsive layout */
-fitCanvasToDisplaySize();
-
-/* end of script */
+/* === Infinite Crossy Road === */
+const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
+function fit(){const dpr=window.devicePixelRatio||1;const r=canvas.getBoundingClientRect();canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}window.addEventListener('resize',fit);fit();
+const TILE=20;let lanes=[],player=null,cameraY=0,last=null,score=0,high=+localStorage.getItem('highscore')||0;
+function makeLane(i){if(i%10===0)return{type:'safe',items:[]};let r=Math.random();if(r<.4){let sp=(Math.random()*.6+.6)*(Math.random()<.5?1:-1);let items=[];for(let j=0;j<3;j++)items.push({x:Math.random()*canvas.width,w:40,speed:sp});return{type:'road',items}}else if(r<.65){let sp=(Math.random()*.5+.4)*(Math.random()<.5?1:-1);let items=[];for(let j=0;j<2;j++)items.push({x:Math.random()*canvas.width,w:80,speed:sp});return{type:'river',items}}else return{type:'grass',items:[]}}
+function ensure(n){while(lanes.length<=n)lanes.push(makeLane(lanes.length))}
+function init(){lanes=[];ensure(40);player={x:Math.floor(canvas.getBoundingClientRect().width/2/TILE)*TILE,y:26*TILE,size:TILE,onLog:false};cameraY=Math.max(0,player.y-canvas.getBoundingClientRect().height/2);score=0;last=null}
+function move(d){if(!player)return;if(d==='up')player.y-=TILE;if(d==='down')player.y+=TILE;if(d==='left')player.x-=TILE;if(d==='right')player.x+=TILE;let w=canvas.getBoundingClientRect().width;player.x=Math.max(0,Math.min(w-player.size,player.x));player.x=Math.round(player.x/TILE)*TILE;player.y=Math.round(player.y/TILE)*TILE;ensure(Math.floor(player.y/TILE)+30)}
+document.querySelectorAll('.kbtn').forEach(b=>b.onclick=()=>{let d=b.dataset.dir;if(d==='reset'){init();return}move(d)});
+window.onkeydown=e=>{if(e.key.startsWith('Arrow'))move(e.key.replace('Arrow','').toLowerCase());if(e.key==='r')init()};
+function loop(t){if(!last)last=t;let dt=t-last;last=t;cameraY=player.y-canvas.getBoundingClientRect().height/2;if(cameraY<0)cameraY=0;let top=Math.floor(cameraY/TILE);ensure(top+40);ctx.clearRect(0,0,canvas.width,canvas.height);
+for(let i=top;i<top+40;i++){let lane=lanes[i];let y=i*TILE-cameraY;if(lane.type==='safe'){ctx.fillStyle='#ccffcc';ctx.fillRect(0,y,canvas.width,TILE)}if(lane.type==='grass'){ctx.fillStyle='#9be29b';ctx.fillRect(0,y,canvas.width,TILE)}if(lane.type==='road'){ctx.fillStyle='#666';ctx.fillRect(0,y,canvas.width,TILE);lane.items.forEach(c=>{c.x+=c.speed*dt/16;if(c.x>canvas.width+50)c.x=-80;if(c.x<-80)c.x=canvas.width+50;ctx.fillStyle='#d44';ctx.fillRect(c.x,y,40,TILE-2)})}if(lane.type==='river'){ctx.fillStyle='#09f';ctx.fillRect(0,y,canvas.width,TILE);lane.items.forEach(l=>{l.x+=l.speed*dt/16;if(l.x>canvas.width+100)l.x=-100;if(l.x<-100)l.x=canvas.width+100;ctx.fillStyle='#964B00';ctx.fillRect(l.x,y,l.w,TILE-2)})}}
+let li=Math.floor(player.y/TILE),lane=lanes[li];let died=false;player.onLog=false;if(lane){if(lane.type==='road'){for(let c of lane.items)if(player.x<c.x+40&&player.x+player.size>c.x){died=true;break}}if(lane.type==='river'){for(let l of lane.items)if(player.x<l.x+l.w&&player.x+player.size>l.x){player.onLog=true;player.x+=l.speed*dt/16;break}if(!player.onLog)died=true}}
+if(died){if(score>high){high=score;localStorage.setItem('highscore',high)}init();}ctx.fillStyle='#ff0';ctx.fillRect(player.x,player.y-cameraY,player.size,player.size);
+score=Math.max(score,Math.floor(player.y/TILE)-26);document.getElementById('scoreboard').innerHTML=`Score: ${score}<br>High: ${high}`;
+requestAnimationFrame(loop)}
+init();requestAnimationFrame(loop);
 </script>
 </body>
 </html>
