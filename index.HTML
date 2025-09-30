@@ -20,87 +20,23 @@
     }
     section { padding: 1rem; }
     .calendar-container { display: flex; }
-    .calendar {
-      flex: 2;
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-    }
-    .calendar div {
-      padding: 10px;
-      background: white;
-      text-align: center;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .calendar .today {
-      background: #ffd580;
-      font-weight: bold;
-    }
+    .calendar { flex: 2; display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .calendar div { padding: 10px; background: white; text-align: center; border-radius: 4px; cursor: pointer; }
+    .calendar .today { background: #ffd580; font-weight: bold; }
     .calendar-controls { margin-bottom: 10px; text-align: center; }
-    .event-panel {
-      flex: 1;
-      margin-left: 20px;
-      background: #fff;
-      border-radius: 8px;
-      padding: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
+    .event-panel { flex: 1; margin-left: 20px; background: #fff; border-radius: 8px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .event-panel h3 { margin-top: 0; }
     .event-panel ul { list-style: none; padding: 0; }
     .event-panel li { margin-bottom: 5px; }
-    .event-panel button {
-      margin-left: 10px;
-      background: #ff6961;
-      color: white;
-      border: none;
-      padding: 2px 6px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    canvas {
-      background: #eee;
-      display: block;
-      margin: 0 auto;
-      border: 2px solid #333;
-    }
-    .news-section {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-    }
-    .news-article {
-      background: white;
-      padding: 5px;
-      border-radius: 8px;
-      text-align: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .news-article img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-      border-radius: 4px;
-    }
-    .news-article a { font-weight: bold; color: #333; text-decoration: none; }
-    .secret-button {
-      position: fixed;
-      bottom: 5px;
-      right: 5px;
-      width: 15px;
-      height: 15px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-    }
+    .event-panel button { margin-left: 10px; background: #ff6961; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+    canvas { background: #eee; display: block; margin: 0 auto; border: 2px solid #333; }
+    .news-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+    .news-article { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .secret-button { position: fixed; bottom: 5px; right: 5px; width: 15px; height: 15px; background: transparent; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
   <header><h1>My Personal Profile</h1></header>
-
-  <section>
-    <h2>My Resume</h2>
-    <p>Upload or write your resume content here.</p>
-  </section>
 
   <section>
     <h2>Calendar</h2>
@@ -131,19 +67,13 @@
   </section>
 
   <section>
-    <h2>International Politics</h2>
-    <div id="news-international" class="news-section"></div>
-    <h2>National Politics</h2>
-    <div id="news-national" class="news-section"></div>
-    <h2>Science</h2>
-    <div id="news-science" class="news-section"></div>
-    <h2>Sports</h2>
-    <div id="news-sports" class="news-section"></div>
+    <h2>World News</h2>
+    <div id="news" class="news-section"></div>
   </section>
 
   <section>
     <h2>Mini-Game: Crossy Road Clone</h2>
-    <canvas id="gameCanvas" width="400" height="550"></canvas>
+    <canvas id="gameCanvas" width="420" height="600"></canvas>
   </section>
 
   <button class="secret-button" onclick="redirectSecret()"></button>
@@ -157,6 +87,7 @@
     const newEventEl=document.getElementById('newEvent');
     let currentDate=new Date();
     let events=JSON.parse(localStorage.getItem('events')||'{}');
+
     function renderCalendar(){
       const year=currentDate.getFullYear(),month=currentDate.getMonth();
       const firstDay=new Date(year,month,1).getDay();
@@ -165,144 +96,98 @@
       monthYearEl.textContent=`${currentDate.toLocaleString('default',{month:'long'})} ${year}`;
       for(let i=0;i<firstDay;i++){calendarEl.appendChild(document.createElement('div'));}
       for(let d=1;d<=daysInMonth;d++){
-        const dayCell=document.createElement('div');
-        dayCell.textContent=d;
+        const dayCell=document.createElement('div'); dayCell.textContent=d;
         const today=new Date();
-        if(d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear()){
-          dayCell.classList.add('today');loadEvents(new Date(year,month,d));
-        }
+        if(d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear()){dayCell.classList.add('today'); loadEvents(new Date(year,month,d));}
         dayCell.onclick=()=>loadEvents(new Date(year,month,d));
         calendarEl.appendChild(dayCell);
       }
     }
     function loadEvents(date){
       const key=date.toDateString();
-      selectedDateEl.textContent=key;
-      eventListEl.innerHTML='';
-      (events[key]||[]).forEach((event,i)=>{
-        const li=document.createElement('li');li.textContent=event;
-        const delBtn=document.createElement('button');delBtn.textContent='X';
-        delBtn.onclick=()=>deleteEvent(key,i);
-        li.appendChild(delBtn);eventListEl.appendChild(li);
-      });selectedDateEl.dataset.date=key;
+      selectedDateEl.textContent=key; eventListEl.innerHTML='';
+      (events[key]||[]).forEach((event,i)=>{const li=document.createElement('li'); li.textContent=event;
+        const delBtn=document.createElement('button'); delBtn.textContent='X'; delBtn.onclick=()=>deleteEvent(key,i); li.appendChild(delBtn); eventListEl.appendChild(li);});
+      selectedDateEl.dataset.date=key;
     }
-    function addEvent(){
-      const key=selectedDateEl.dataset.date;if(!key)return;
-      if(!events[key])events[key]=[];
-      events[key].push(newEventEl.value);newEventEl.value='';
-      localStorage.setItem('events',JSON.stringify(events));
-      loadEvents(new Date(key));
-    }
-    function deleteEvent(key,index){
-      events[key].splice(index,1);
-      localStorage.setItem('events',JSON.stringify(events));
-      loadEvents(new Date(key));
-    }
+    function addEvent(){const key=selectedDateEl.dataset.date;if(!key)return;if(!events[key])events[key]=[];
+      events[key].push(newEventEl.value); newEventEl.value=''; localStorage.setItem('events',JSON.stringify(events)); loadEvents(new Date(key));}
+    function deleteEvent(key,index){events[key].splice(index,1); localStorage.setItem('events',JSON.stringify(events)); loadEvents(new Date(key));}
     function prevMonth(){currentDate.setMonth(currentDate.getMonth()-1);renderCalendar();}
     function nextMonth(){currentDate.setMonth(currentDate.getMonth()+1);renderCalendar();}
     renderCalendar();
 
-    // ===== News (Google RSS via rss2json) =====
-    async function loadNews(feedUrl,containerId){
+    // ===== News via RSS =====
+    async function fetchNews(){
       try{
-        const res=await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${feedUrl}`);
-        const data=await res.json();
-        const container=document.getElementById(containerId);
-        container.innerHTML='';
+        const rss="https://feeds.bbci.co.uk/news/rss.xml";
+        const res=await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rss)}`);
+        const data=await res.json(); const container=document.getElementById("news"); container.innerHTML="";
         data.items.slice(0,6).forEach(article=>{
-          const div=document.createElement('div');
-          div.className='news-article';
-          div.innerHTML=`<a href="${article.link}" target="_blank">${article.title}</a>
-            ${article.enclosure&&article.enclosure.link?`<img src="${article.enclosure.link}" alt="">`:''}`;
+          const div=document.createElement("div"); div.className="news-article";
+          div.innerHTML=`<h4><a href="${article.link}" target="_blank">${article.title}</a></h4>
+            <img src="${article.enclosure?.link||''}" style="max-width:100%">
+            <p>${article.description||''}</p>`;
           container.appendChild(div);
         });
-      }catch(e){console.error("News error",e);}
+      }catch(e){console.error("News fetch error",e);}
     }
-    function refreshNews(){
-      loadNews("https://news.google.com/rss/search?q=international+politics", "news-international");
-      loadNews("https://news.google.com/rss/search?q=national+politics", "news-national");
-      loadNews("https://news.google.com/rss/search?q=science", "news-science");
-      loadNews("https://news.google.com/rss/search?q=sports", "news-sports");
-    }
-    refreshNews();setInterval(refreshNews,1800000);
+    fetchNews(); setInterval(fetchNews,1800000);
 
     // ===== Secret Redirect =====
-    function redirectSecret(){
-      const code=prompt("Enter secret code:");
-      if(code==="494849"){window.location.href="https://poki.com";}
-    }
+    function redirectSecret(){const code=prompt("Enter secret code:"); if(code==="494849"){window.location.href="https://poki.com";}}
 
     // ===== Crossy Road Clone =====
     const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
-    const TILE=20,PLAYER_SIZE=20;
+    const TILE=30,PLAYER_SIZE=30;
     let player,lanes,offsetY,score,highScore=localStorage.getItem('highScore')||0;
+
     function resetGame(){
-      player={x:10*TILE,y:26*TILE,size:PLAYER_SIZE};
+      player={x:Math.floor(canvas.width/2/TILE)*TILE,y:20*TILE,size:PLAYER_SIZE};
       lanes=[];offsetY=0;score=0;
-      for(let i=0;i<30;i++){generateLane(i);}
+      for(let i=0;i<40;i++){generateLane(i);}
     }
     function generateLane(index){
       if(index%10===0){lanes.push({type:'grass'});}
-      else{
-        const rand=Math.random();
+      else{const rand=Math.random();
         if(rand<0.5)lanes.push({type:'road',cars:[]});
         else if(rand<0.8)lanes.push({type:'river',logs:[]});
-        else lanes.push({type:'grass'});
-      }
+        else lanes.push({type:'grass'});}
     }
     function move(dir){
-      if(dir==='up')player.y-=TILE;
-      if(dir==='down')player.y+=TILE;
-      if(dir==='left')player.x-=TILE;
-      if(dir==='right')player.x+=TILE;
-      if(player.y<200){offsetY+=TILE;player.y+=TILE;score++;if(lanes.length<score/1+40)generateLane(lanes.length);}
+      if(dir==='up'){player.y-=TILE;score++;if(player.y<TILE*15){offsetY+=TILE;generateLane(lanes.length);}}
+      if(dir==='down'&&player.y<20*TILE)player.y+=TILE;
+      if(dir==='left'&&player.x>=TILE)player.x-=TILE;
+      if(dir==='right'&&player.x<=canvas.width-TILE*2)player.x+=TILE;
     }
     function gameLoop(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
       for(let i=0;i<lanes.length;i++){
-        const laneY=550-(i*TILE)+offsetY;
-        if(laneY<-TILE||laneY>570)continue;
-        if(lanes[i].type==='grass'){
-          ctx.fillStyle='#7cfc00';ctx.fillRect(0,laneY,400,TILE);
-        }else if(lanes[i].type==='road'){
-          ctx.fillStyle='#444';ctx.fillRect(0,laneY,400,TILE);
-          if(Math.random()<0.01){lanes[i].cars.push({x:Math.random()<0.5?-40:440,speed:(Math.random()*40+30)*(Math.random()<0.5?-1:1)});}
-          lanes[i].cars.forEach(car=>{
-            ctx.fillStyle='red';car.x+=car.speed/60;
-            ctx.fillRect(car.x,laneY,40,TILE);
-            if(player.x<car.x+40&&player.x+PLAYER_SIZE>car.x&&player.y<laneY+TILE&&player.y+PLAYER_SIZE>laneY)endGame();
-          });
+        const laneY=canvas.height-(i*TILE)+offsetY;
+        if(laneY<-TILE||laneY>canvas.height+TILE)continue;
+        if(lanes[i].type==='grass'){ctx.fillStyle='#7cfc00';ctx.fillRect(0,laneY,canvas.width,TILE);}
+        else if(lanes[i].type==='road'){
+          ctx.fillStyle='#444';ctx.fillRect(0,laneY,canvas.width,TILE);
+          if(Math.random()<0.01){lanes[i].cars.push({x:Math.random()<0.5?-40:canvas.width+40,speed:(Math.random()*40+30)*(Math.random()<0.5?-1:1)});}
+          lanes[i].cars.forEach(car=>{ctx.fillStyle='red';car.x+=car.speed/60;ctx.fillRect(car.x,laneY,40,TILE);
+            if(player.x<car.x+40&&player.x+PLAYER_SIZE>car.x&&player.y===laneY){endGame();}});
         }else if(lanes[i].type==='river'){
-          ctx.fillStyle='#00f';ctx.fillRect(0,laneY,400,TILE);
-          if(Math.random()<0.03){lanes[i].logs.push({x:Math.random()<0.5?-80:440,speed:(Math.random()*30+20)*(Math.random()<0.5?-1:1)});}
+          ctx.fillStyle='#00f';ctx.fillRect(0,laneY,canvas.width,TILE);
+          if(Math.random()<0.05){lanes[i].logs.push({x:Math.random()<0.5?-80:canvas.width+80,speed:(Math.random()*30+20)*(Math.random()<0.5?-1:1)});}
           let onLog=false;
-          lanes[i].logs.forEach(log=>{
-            ctx.fillStyle='saddlebrown';log.x+=log.speed/60;
-            ctx.fillRect(log.x,laneY,80,TILE);
-            if(player.x<log.x+80&&player.x+PLAYER_SIZE>log.x&&player.y<laneY+TILE&&player.y+PLAYER_SIZE>laneY){
-              onLog=true;player.x+=log.speed/60;
-            }
-          });
-          if(player.y<laneY+TILE&&player.y+PLAYER_SIZE>laneY&&!onLog)endGame();
+          lanes[i].logs.forEach(log=>{ctx.fillStyle='saddlebrown';log.x+=log.speed/60;ctx.fillRect(log.x,laneY,80,TILE);
+            if(player.x<log.x+80&&player.x+PLAYER_SIZE>log.x&&player.y===laneY){onLog=true;player.x+=log.speed/60;}});
+          if(player.y===laneY&&!onLog)endGame();
         }
       }
       ctx.fillStyle='yellow';ctx.fillRect(player.x,player.y,player.size,player.size);
-      ctx.fillStyle='black';ctx.font="16px Arial";
-      ctx.fillText("Score: "+score,10,20);
-      ctx.fillText("High Score: "+highScore,10,40);
+      ctx.fillStyle='black';ctx.fillText('Score: '+score,10,20);
+      ctx.fillText('High: '+highScore,10,40);
       requestAnimationFrame(gameLoop);
     }
-    function endGame(){
-      if(score>highScore){highScore=score;localStorage.setItem('highScore',highScore);}
-      resetGame();
-    }
-    document.addEventListener('keydown',e=>{
-      if(e.key==='ArrowUp')move('up');
-      if(e.key==='ArrowDown')move('down');
-      if(e.key==='ArrowLeft')move('left');
-      if(e.key==='ArrowRight')move('right');
-    });
-    resetGame();gameLoop();
+    function endGame(){if(score>highScore){highScore=score;localStorage.setItem('highScore',highScore);}resetGame();}
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowUp')move('up');if(e.key==='ArrowDown')move('down');if(e.key==='ArrowLeft')move('left');if(e.key==='ArrowRight')move('right');});
+    resetGame(); gameLoop();
   </script>
 </body>
 </html>
