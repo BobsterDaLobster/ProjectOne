@@ -1,193 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Personal Profile Website</title>
+  <meta charset="UTF-8">
+  <title>My Personal Profile</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to right, #add8e6, #ffd580);
-      margin: 0;
-      padding: 0;
-      color: #333;
-    }
-    header {
-      text-align: center;
-      padding: 1rem;
-      background: #87cefa;
-      color: white;
-    }
-    section { padding: 1rem; }
-    .calendar-container { display: flex; }
-    .calendar { flex: 2; display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-    .calendar div { padding: 10px; background: white; text-align: center; border-radius: 4px; cursor: pointer; }
-    .calendar .today { background: #ffd580; font-weight: bold; }
-    .calendar-controls { margin-bottom: 10px; text-align: center; }
-    .event-panel { flex: 1; margin-left: 20px; background: #fff; border-radius: 8px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    .event-panel h3 { margin-top: 0; }
-    .event-panel ul { list-style: none; padding: 0; }
-    .event-panel li { margin-bottom: 5px; }
-    .event-panel button { margin-left: 10px; background: #ff6961; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
-    canvas { background: #eee; display: block; margin: 0 auto; border: 2px solid #333; }
-    .news-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-    .news-article { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .secret-button { position: fixed; bottom: 5px; right: 5px; width: 15px; height: 15px; background: transparent; border: none; cursor: pointer; }
+    body { font-family: Arial, sans-serif; background: #b3e5fc; color: #333; margin:0; padding:0; }
+    header { background:#ffcc80; padding:20px; text-align:center; }
+    h2 { margin-top:40px; color:#333; }
+    section { padding:20px; }
+    .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; text-align:center; }
+    .calendar div { padding:10px; border:1px solid #ccc; background:#fff; }
+    .today { background:#ffcc80; font-weight:bold; }
+    .day-events { border:1px solid #ccc; padding:10px; background:#fff; }
+    .news-section { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+    .news-tile { background:#fff; padding:10px; border:1px solid #ccc; }
+    .news-tile img { width:100%; height:120px; object-fit:cover; }
+    #gameCanvas { background:#c8e6c9; display:block; margin:20px auto; border:2px solid #333; }
+    .game-controls { position:absolute; bottom:20px; right:20px; display:grid; grid-template-columns:repeat(3,50px); grid-gap:5px; }
+    .game-controls button { padding:10px; }
+    #scoreBoard { text-align:center; font-size:20px; margin:10px; }
+    #secret { position:fixed; bottom:5px; right:5px; width:20px; height:20px; cursor:pointer; }
   </style>
 </head>
 <body>
-  <header><h1>My Personal Profile</h1></header>
+  <header>
+    <h1>My Personal Profile</h1>
+  </header>
+
+  <section>
+    <h2>Resume</h2>
+    <p>[Your resume content here]</p>
+  </section>
 
   <section>
     <h2>Calendar</h2>
-    <div class="calendar-controls">
-      <button onclick="prevMonth()">Previous</button>
-      <span id="monthYear"></span>
-      <button onclick="nextMonth()">Next</button>
-    </div>
-    <div class="calendar-container">
-      <div class="calendar" id="calendar"></div>
-      <div class="event-panel">
-        <h3 id="selectedDate"></h3>
-        <ul id="eventList"></ul>
-        <input type="text" id="newEvent" placeholder="New Event" />
-        <button onclick="addEvent()">Add</button>
-      </div>
+    <div id="calendar"></div>
+    <div class="day-events">
+      <h3>Events for <span id="selectedDate"></span></h3>
+      <ul id="eventList"></ul>
+      <input id="eventInput" placeholder="New event">
+      <button onclick="addEvent()">Add</button>
     </div>
   </section>
 
   <section>
-    <h2>Sports News (via ESPN)</h2>
-    <p><a href="https://www.espn.com" target="_blank">Go to ESPN for latest sports news & highlights</a></p>
+    <h2>Crossy Road Game</h2>
+    <div id="scoreBoard">Score: 0 | High Score: 0</div>
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+    <div class="game-controls">
+      <button onclick="move('up')">↑</button>
+      <button onclick="move('left')">←</button>
+      <button onclick="move('down')">↓</button>
+      <button onclick="move('right')">→</button>
+    </div>
   </section>
 
   <section>
-    <h2>Notre Dame Fighting Irish Football</h2>
-    <p><a href="https://www.espn.com/college-football/team/_/id/87/notre-dame-fighting-irish" target="_blank">Notre Dame Football on ESPN</a></p>
+    <h2>Sports</h2>
+    <p><a href="https://www.espn.com" target="_blank">ESPN Sports News</a></p>
+    <p><a href="https://fightingirish.com" target="_blank">Notre Dame Fighting Irish</a></p>
   </section>
 
   <section>
     <h2>World News</h2>
-    <div id="news" class="news-section"></div>
+    <h3>International Politics</h3>
+    <div id="international" class="news-section"></div>
+    <h3>National Politics</h3>
+    <div id="national" class="news-section"></div>
+    <h3>Science</h3>
+    <div id="science" class="news-section"></div>
+    <h3>Sports</h3>
+    <div id="sportsNews" class="news-section"></div>
   </section>
 
-  <section>
-    <h2>Mini-Game: Crossy Road Clone</h2>
-    <canvas id="gameCanvas" width="420" height="600"></canvas>
-  </section>
+  <div id="secret"></div>
 
-  <button class="secret-button" onclick="redirectSecret()"></button>
+<script>
+/* ===== Calendar ===== */
+const calendar=document.getElementById('calendar');
+const today=new Date();let events=JSON.parse(localStorage.getItem('events')||'{}');
+function buildCalendar(){
+  calendar.innerHTML='';let year=today.getFullYear(),month=today.getMonth();
+  let firstDay=new Date(year,month,1).getDay();
+  let daysInMonth=new Date(year,month+1,0).getDate();
+  for(let i=0;i<firstDay;i++){calendar.innerHTML+='<div></div>';}
+  for(let d=1;d<=daysInMonth;d++){
+    let div=document.createElement('div');div.textContent=d;
+    if(d===today.getDate())div.classList.add('today');
+    div.onclick=()=>showEvents(d,month,year);
+    calendar.appendChild(div);
+  }
+}
+function showEvents(day,month,year){
+  let dateKey=`${year}-${month+1}-${day}`;
+  document.getElementById('selectedDate').textContent=dateKey;
+  let list=document.getElementById('eventList');list.innerHTML='';
+  (events[dateKey]||[]).forEach((e,i)=>{
+    let li=document.createElement('li');
+    li.textContent=e;
+    li.onclick=()=>{events[dateKey].splice(i,1);saveEvents();showEvents(day,month,year);}
+    list.appendChild(li);
+  });
+}
+function addEvent(){
+  let date=document.getElementById('selectedDate').textContent;
+  if(!date)return;let input=document.getElementById('eventInput');
+  if(!events[date])events[date]=[];events[date].push(input.value);
+  input.value='';saveEvents();showEvents(...date.split('-').map(Number).reverse());
+}
+function saveEvents(){localStorage.setItem('events',JSON.stringify(events));}
+buildCalendar();
 
-  <script>
-    // ===== Calendar =====
-    const calendarEl=document.getElementById('calendar');
-    const monthYearEl=document.getElementById('monthYear');
-    const selectedDateEl=document.getElementById('selectedDate');
-    const eventListEl=document.getElementById('eventList');
-    const newEventEl=document.getElementById('newEvent');
-    let currentDate=new Date();
-    let events=JSON.parse(localStorage.getItem('events')||'{}');
+/* ===== Crossy Road ===== */
+const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
+const TILE=30,PLAYER_SIZE=30;
+let player,lanes,offsetY,score,highScore=localStorage.getItem('highScore')||0;
+function resetGame(){player={x:10*TILE,y:20*TILE,size:PLAYER_SIZE};lanes=[];offsetY=0;score=0;for(let i=0;i<50;i++)generateLane(i);}
+function generateLane(i){if(i%10===0){lanes.push({type:'grass'});}
+else{let r=Math.random();if(r<0.4)lanes.push({type:'road',cars:[]});else if(r<0.7)lanes.push({type:'river',logs:[]});else lanes.push({type:'grass'});}}
+function move(dir){if(dir==='up'){player.y-=TILE;score++;if(player.y<10*TILE){offsetY+=TILE;generateLane(lanes.length);}}if(dir==='down'&&player.y<20*TILE)player.y+=TILE;if(dir==='left'&&player.x>=TILE)player.x-=TILE;if(dir==='right'&&player.x<=canvas.width-TILE*2)player.x+=TILE;}
+function gameLoop(){ctx.clearRect(0,0,canvas.width,canvas.height);
+lanes.forEach((lane,i)=>{let y=canvas.height-(i*TILE)+offsetY;if(y<-TILE||y>canvas.height+TILE)return;
+if(lane.type==='grass'){ctx.fillStyle='#a5d6a7';ctx.fillRect(0,y,canvas.width,TILE);}
+if(lane.type==='road'){ctx.fillStyle='#757575';ctx.fillRect(0,y,canvas.width,TILE);
+if(Math.random()<0.01)lane.cars.push({x:0,y,speed:2+Math.random()*2});
+lane.cars.forEach(car=>{car.x+=car.speed;ctx.fillStyle='red';ctx.fillRect(car.x,y,30,TILE);
+if(car.x>canvas.width)lane.cars.splice(lane.cars.indexOf(car),1);
+if(player.x<car.x+30&&player.x+PLAYER_SIZE>car.x&&player.y===y)resetGame();});}
+if(lane.type==='river'){ctx.fillStyle='#64b5f6';ctx.fillRect(0,y,canvas.width,TILE);
+if(Math.random()<0.02)lane.logs.push({x:Math.random()*canvas.width,y,speed:1.5+Math.random()*1});
+let safe=false;lane.logs.forEach(log=>{log.x+=log.speed;ctx.fillStyle='#8d6e63';ctx.fillRect(log.x,y,60,TILE);
+if(player.x<log.x+60&&player.x+PLAYER_SIZE>log.x&&player.y===y){safe=true;player.x+=log.speed;}});if(player.y===y&&!safe)resetGame();}
+});
+ctx.fillStyle='green';ctx.fillRect(player.x,player.y,PLAYER_SIZE,PLAYER_SIZE);
+document.getElementById('scoreBoard').textContent=`Score: ${score} | High Score: ${highScore}`;
+if(score>highScore){highScore=score;localStorage.setItem('highScore',highScore);}
+requestAnimationFrame(gameLoop);}
+resetGame();gameLoop();
 
-    function renderCalendar(){
-      const year=currentDate.getFullYear(),month=currentDate.getMonth();
-      const firstDay=new Date(year,month,1).getDay();
-      const daysInMonth=new Date(year,month+1,0).getDate();
-      calendarEl.innerHTML='';
-      monthYearEl.textContent=`${currentDate.toLocaleString('default',{month:'long'})} ${year}`;
-      for(let i=0;i<firstDay;i++){calendarEl.appendChild(document.createElement('div'));}
-      for(let d=1;d<=daysInMonth;d++){
-        const dayCell=document.createElement('div'); dayCell.textContent=d;
-        const today=new Date();
-        if(d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear()){dayCell.classList.add('today'); loadEvents(new Date(year,month,d));}
-        dayCell.onclick=()=>loadEvents(new Date(year,month,d));
-        calendarEl.appendChild(dayCell);
-      }
-    }
-    function loadEvents(date){
-      const key=date.toDateString();
-      selectedDateEl.textContent=key; eventListEl.innerHTML='';
-      (events[key]||[]).forEach((event,i)=>{const li=document.createElement('li'); li.textContent=event;
-        const delBtn=document.createElement('button'); delBtn.textContent='X'; delBtn.onclick=()=>deleteEvent(key,i); li.appendChild(delBtn); eventListEl.appendChild(li);});
-      selectedDateEl.dataset.date=key;
-    }
-    function addEvent(){const key=selectedDateEl.dataset.date;if(!key)return;if(!events[key])events[key]=[];
-      events[key].push(newEventEl.value); newEventEl.value=''; localStorage.setItem('events',JSON.stringify(events)); loadEvents(new Date(key));}
-    function deleteEvent(key,index){events[key].splice(index,1); localStorage.setItem('events',JSON.stringify(events)); loadEvents(new Date(key));}
-    function prevMonth(){currentDate.setMonth(currentDate.getMonth()-1);renderCalendar();}
-    function nextMonth(){currentDate.setMonth(currentDate.getMonth()+1);renderCalendar();}
-    renderCalendar();
+/* ===== News Feed ===== */
+async function loadRSS(url,target){
+  try{let res=await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
+  let data=await res.json();document.getElementById(target).innerHTML='';
+  data.items.slice(0,6).forEach(item=>{
+    let div=document.createElement('div');div.className='news-tile';
+    div.innerHTML=`<img src="${item.enclosure?.link||''}"><h4><a href="${item.link}" target="_blank">${item.title}</a></h4>`;
+    document.getElementById(target).appendChild(div);});}catch(e){console.error(e);}
+}
+function refreshNews(){
+  loadRSS("https://news.google.com/rss/topics/CAAqJAgKIh5DQkFTRUFvS0wyMHZNREZqY0hJQ1pXNG9BQVAB?hl=en-US&gl=US&ceid=US:en","international");
+  loadRSS("https://news.google.com/rss/topics/CAAqJAgKIh5DQkFTRUFvS0wyMHZNRFZqY0hJQ1pXNG9BQVAB?hl=en-US&gl=US&ceid=US:en","national");
+  loadRSS("https://news.google.com/rss/headlines/section/topic/SCIENCE?ned=us&hl=en","science");
+  loadRSS("https://www.espn.com/espn/rss/news","sportsNews");
+}
+refreshNews();setInterval(refreshNews,1800000);
 
-    // ===== News via RSS =====
-    async function fetchNews(){
-      try{
-        const rss="https://feeds.bbci.co.uk/news/rss.xml";
-        const res=await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rss)}`);
-        const data=await res.json(); const container=document.getElementById("news"); container.innerHTML="";
-        data.items.slice(0,6).forEach(article=>{
-          const div=document.createElement("div"); div.className="news-article";
-          div.innerHTML=`<h4><a href="${article.link}" target="_blank">${article.title}</a></h4>
-            <img src="${article.enclosure?.link||''}" style="max-width:100%">
-            <p>${article.description||''}</p>`;
-          container.appendChild(div);
-        });
-      }catch(e){console.error("News fetch error",e);}
-    }
-    fetchNews(); setInterval(fetchNews,1800000);
-
-    // ===== Secret Redirect =====
-    function redirectSecret(){const code=prompt("Enter secret code:"); if(code==="494849"){window.location.href="https://poki.com";}}
-
-    // ===== Crossy Road Clone =====
-    const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
-    const TILE=30,PLAYER_SIZE=30;
-    let player,lanes,offsetY,score,highScore=localStorage.getItem('highScore')||0;
-
-    function resetGame(){
-      player={x:Math.floor(canvas.width/2/TILE)*TILE,y:20*TILE,size:PLAYER_SIZE};
-      lanes=[];offsetY=0;score=0;
-      for(let i=0;i<40;i++){generateLane(i);}
-    }
-    function generateLane(index){
-      if(index%10===0){lanes.push({type:'grass'});}
-      else{const rand=Math.random();
-        if(rand<0.5)lanes.push({type:'road',cars:[]});
-        else if(rand<0.8)lanes.push({type:'river',logs:[]});
-        else lanes.push({type:'grass'});}
-    }
-    function move(dir){
-      if(dir==='up'){player.y-=TILE;score++;if(player.y<TILE*15){offsetY+=TILE;generateLane(lanes.length);}}
-      if(dir==='down'&&player.y<20*TILE)player.y+=TILE;
-      if(dir==='left'&&player.x>=TILE)player.x-=TILE;
-      if(dir==='right'&&player.x<=canvas.width-TILE*2)player.x+=TILE;
-    }
-    function gameLoop(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      for(let i=0;i<lanes.length;i++){
-        const laneY=canvas.height-(i*TILE)+offsetY;
-        if(laneY<-TILE||laneY>canvas.height+TILE)continue;
-        if(lanes[i].type==='grass'){ctx.fillStyle='#7cfc00';ctx.fillRect(0,laneY,canvas.width,TILE);}
-        else if(lanes[i].type==='road'){
-          ctx.fillStyle='#444';ctx.fillRect(0,laneY,canvas.width,TILE);
-          if(Math.random()<0.01){lanes[i].cars.push({x:Math.random()<0.5?-40:canvas.width+40,speed:(Math.random()*40+30)*(Math.random()<0.5?-1:1)});}
-          lanes[i].cars.forEach(car=>{ctx.fillStyle='red';car.x+=car.speed/60;ctx.fillRect(car.x,laneY,40,TILE);
-            if(player.x<car.x+40&&player.x+PLAYER_SIZE>car.x&&player.y===laneY){endGame();}});
-        }else if(lanes[i].type==='river'){
-          ctx.fillStyle='#00f';ctx.fillRect(0,laneY,canvas.width,TILE);
-          if(Math.random()<0.05){lanes[i].logs.push({x:Math.random()<0.5?-80:canvas.width+80,speed:(Math.random()*30+20)*(Math.random()<0.5?-1:1)});}
-          let onLog=false;
-          lanes[i].logs.forEach(log=>{ctx.fillStyle='saddlebrown';log.x+=log.speed/60;ctx.fillRect(log.x,laneY,80,TILE);
-            if(player.x<log.x+80&&player.x+PLAYER_SIZE>log.x&&player.y===laneY){onLog=true;player.x+=log.speed/60;}});
-          if(player.y===laneY&&!onLog)endGame();
-        }
-      }
-      ctx.fillStyle='yellow';ctx.fillRect(player.x,player.y,player.size,player.size);
-      ctx.fillStyle='black';ctx.fillText('Score: '+score,10,20);
-      ctx.fillText('High: '+highScore,10,40);
-      requestAnimationFrame(gameLoop);
-    }
-    function endGame(){if(score>highScore){highScore=score;localStorage.setItem('highScore',highScore);}resetGame();}
-    document.addEventListener('keydown',e=>{if(e.key==='ArrowUp')move('up');if(e.key==='ArrowDown')move('down');if(e.key==='ArrowLeft')move('left');if(e.key==='ArrowRight')move('right');});
-    resetGame(); gameLoop();
-  </script>
+/* ===== Secret Redirect ===== */
+document.getElementById('secret').onclick=()=>{let code=prompt("Enter code:");if(code==="494849")window.location.href="https://poki.com";}
+</script>
 </body>
 </html>
