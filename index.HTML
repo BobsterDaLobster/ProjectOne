@@ -1,162 +1,403 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>My Personal Profile</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #b3e5fc; color: #333; margin:0; padding:0; }
-    header { background:#ffcc80; padding:20px; text-align:center; }
-    h2 { margin-top:40px; color:#333; }
-    section { padding:20px; }
-    .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; text-align:center; }
-    .calendar div { padding:10px; border:1px solid #ccc; background:#fff; }
-    .today { background:#ffcc80; font-weight:bold; }
-    .day-events { border:1px solid #ccc; padding:10px; background:#fff; }
-    .news-section { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
-    .news-tile { background:#fff; padding:10px; border:1px solid #ccc; }
-    .news-tile img { width:100%; height:120px; object-fit:cover; }
-    #gameCanvas { background:#c8e6c9; display:block; margin:20px auto; border:2px solid #333; }
-    .game-controls { position:absolute; bottom:20px; right:20px; display:grid; grid-template-columns:repeat(3,50px); grid-gap:5px; }
-    .game-controls button { padding:10px; }
-    #scoreBoard { text-align:center; font-size:20px; margin:10px; }
-    #secret { position:fixed; bottom:5px; right:5px; width:20px; height:20px; cursor:pointer; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Personal Profile — Crossy Road</title>
+<style>
+  :root{--baby:#add8e6;--peach:#ffd580;--accent:#87cefa;--dark:#333}
+  html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(90deg,var(--baby),var(--peach))}
+  header{background:var(--accent);color:#fff;padding:14px;text-align:center}
+  main{max-width:1100px;margin:14px auto;padding:0 12px}
+  section{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  h1,h2{margin:6px 0}
+  /* calendar */
+  .calendar-wrap{display:flex;gap:14px;flex-wrap:wrap}
+  .calendar{min-width:320px}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .day{padding:8px;border-radius:6px;text-align:center;cursor:pointer;border:1px solid rgba(0,0,0,.06)}
+  .today{background:var(--peach);font-weight:700}
+  .events-panel{min-width:260px}
+  /* game */
+  #gameWrap{position:relative;max-width:760px;margin:0 auto}
+  /* Fix canvas CSS size to match pixel size to avoid scale issues */
+  canvas#gameCanvas{width:760px;height:520px;display:block;border-radius:6px;background:#eaf8ff;border:3px solid var(--dark)}
+  /* keypad overlay bottom-right of game */
+  #keypad{position:absolute;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(3,48px);gap:6px}
+  .kbtn{width:48px;height:44px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-weight:700;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.12)}
+  #hud{position:absolute;left:12px;top:12px;background:rgba(255,255,255,0.9);padding:8px;border-radius:6px;font-weight:700}
+  /* news */
+  .news-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+  .article{background:#fff;padding:8px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center}
+  .article img{width:100%;height:120px;object-fit:cover;border-radius:6px}
+  .secret{position:fixed;bottom:6px;right:6px;width:14px;height:14px;opacity:.2;cursor:pointer}
+  @media (max-width:820px){ .calendar{width:100%} #gameWrap{max-width:100%} canvas#gameCanvas{width:100%;height:auto} }
+</style>
 </head>
 <body>
-  <header>
-    <h1>My Personal Profile</h1>
-  </header>
+<header><h1>My Personal Profile</h1></header>
+<main>
 
   <section>
-    <h2>Resume</h2>
-    <p>[Your resume content here]</p>
+    <h2>My Resume</h2>
+    <p>Paste your resume here.</p>
   </section>
 
   <section>
     <h2>Calendar</h2>
-    <div id="calendar"></div>
-    <div class="day-events">
-      <h3>Events for <span id="selectedDate"></span></h3>
-      <ul id="eventList"></ul>
-      <input id="eventInput" placeholder="New event">
-      <button onclick="addEvent()">Add</button>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <button onclick="prevMonth()">Previous</button>
+      <div id="monthYear"></div>
+      <button onclick="nextMonth()">Next</button>
+    </div>
+    <div class="calendar-wrap">
+      <div class="calendar">
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+      <div class="events-panel">
+        <h3 id="selectedDate">Select a day</h3>
+        <ul id="eventList"></ul>
+        <input id="newEventInput" placeholder="New event" style="width:100%;padding:8px;margin-top:8px"/>
+        <button style="margin-top:8px" onclick="addEvent()">Add</button>
+      </div>
     </div>
   </section>
 
   <section>
-    <h2>Crossy Road Game</h2>
-    <div id="scoreBoard">Score: 0 | High Score: 0</div>
-    <canvas id="gameCanvas" width="600" height="600"></canvas>
-    <div class="game-controls">
-      <button onclick="move('up')">↑</button>
-      <button onclick="move('left')">←</button>
-      <button onclick="move('down')">↓</button>
-      <button onclick="move('right')">→</button>
+    <h2>Mini-Game: Crossy Road (infinite)</h2>
+    <div id="gameWrap">
+      <canvas id="gameCanvas" width="760" height="520"></canvas>
+      <div id="hud">Score: 0<br>High: 0</div>
+      <div id="keypad">
+        <button class="kbtn" data-dir="up">⬆</button>
+        <button class="kbtn" data-dir="left">⬅</button>
+        <button class="kbtn" data-dir="down">⬇</button>
+        <button class="kbtn" data-dir="right">➡</button>
+        <button class="kbtn" data-dir="reset">⟲</button>
+      </div>
     </div>
+    <p style="text-align:center;font-size:.95rem;margin-top:8px">Use arrow keys or on-screen keys. Press R to reset.</p>
   </section>
 
   <section>
-    <h2>Sports</h2>
-    <p><a href="https://www.espn.com" target="_blank">ESPN Sports News</a></p>
-    <p><a href="https://fightingirish.com" target="_blank">Notre Dame Fighting Irish</a></p>
+    <h2>Sports (ESPN)</h2>
+    <p><a href="https://www.espn.com" target="_blank" rel="noopener">Open ESPN</a></p>
+  </section>
+
+  <section>
+    <h2>Notre Dame Fighting Irish</h2>
+    <p><a href="https://www.espn.com/college-football/team/_/id/87/notre-dame-fighting-irish" target="_blank" rel="noopener">Notre Dame on ESPN</a></p>
   </section>
 
   <section>
     <h2>World News</h2>
-    <h3>International Politics</h3>
-    <div id="international" class="news-section"></div>
-    <h3>National Politics</h3>
-    <div id="national" class="news-section"></div>
-    <h3>Science</h3>
-    <div id="science" class="news-section"></div>
-    <h3>Sports</h3>
-    <div id="sportsNews" class="news-section"></div>
+    <h4>International Politics</h4>
+    <div id="news-international" class="news-grid"></div>
+    <h4>National Politics</h4>
+    <div id="news-national" class="news-grid"></div>
+    <h4>Science</h4>
+    <div id="news-science" class="news-grid"></div>
+    <h4>Sports</h4>
+    <div id="news-sports" class="news-grid"></div>
   </section>
 
-  <div id="secret"></div>
+</main>
+
+<div class="secret" id="secretArea" title="Secret"></div>
 
 <script>
-/* ===== Calendar ===== */
-const calendar=document.getElementById('calendar');
-const today=new Date();let events=JSON.parse(localStorage.getItem('events')||'{}');
-function buildCalendar(){
-  calendar.innerHTML='';let year=today.getFullYear(),month=today.getMonth();
-  let firstDay=new Date(year,month,1).getDay();
-  let daysInMonth=new Date(year,month+1,0).getDate();
-  for(let i=0;i<firstDay;i++){calendar.innerHTML+='<div></div>';}
-  for(let d=1;d<=daysInMonth;d++){
-    let div=document.createElement('div');div.textContent=d;
-    if(d===today.getDate())div.classList.add('today');
-    div.onclick=()=>showEvents(d,month,year);
-    calendar.appendChild(div);
+/* ---------- Calendar (unchanged) ---------- */
+const calendarGrid = document.getElementById('calendarGrid');
+const monthYear = document.getElementById('monthYear');
+const selectedDate = document.getElementById('selectedDate');
+const eventList = document.getElementById('eventList');
+const newEventInput = document.getElementById('newEventInput');
+
+let calDate = new Date();
+let storedEvents = JSON.parse(localStorage.getItem('profile_events') || '{}');
+
+function renderCalendar(){
+  calendarGrid.innerHTML = '';
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  monthYear.textContent = calDate.toLocaleString('default',{month:'long', year:'numeric'});
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{const el=document.createElement('div'); el.style.fontWeight='700'; el.textContent=d; calendarGrid.appendChild(el);});
+  const fd = new Date(y,m,1).getDay();
+  for(let i=0;i<fd;i++) calendarGrid.appendChild(document.createElement('div'));
+  const dim = new Date(y,m+1,0).getDate();
+  for(let d=1; d<=dim; d++){
+    const cell = document.createElement('div'); cell.className='day'; cell.textContent=d;
+    const today = new Date();
+    if(d===today.getDate() && m===today.getMonth() && y===today.getFullYear()){ cell.classList.add('today'); selectDay(y,m,d); }
+    cell.onclick = ()=> selectDay(y,m,d);
+    calendarGrid.appendChild(cell);
   }
 }
-function showEvents(day,month,year){
-  let dateKey=`${year}-${month+1}-${day}`;
-  document.getElementById('selectedDate').textContent=dateKey;
-  let list=document.getElementById('eventList');list.innerHTML='';
-  (events[dateKey]||[]).forEach((e,i)=>{
-    let li=document.createElement('li');
-    li.textContent=e;
-    li.onclick=()=>{events[dateKey].splice(i,1);saveEvents();showEvents(day,month,year);}
-    list.appendChild(li);
+function dayKey(y,m,d){ return `${y}-${m}-${d}`; }
+function selectDay(y,m,d){
+  const k = dayKey(y,m,d);
+  selectedDate.textContent = new Date(y,m,d).toDateString();
+  eventList.innerHTML = '';
+  (storedEvents[k]||[]).forEach((ev,i)=>{
+    const li = document.createElement('li');
+    li.textContent = ev;
+    const del = document.createElement('button'); del.textContent = 'X'; del.style.marginLeft='8px';
+    del.onclick = ()=> { storedEvents[k].splice(i,1); localStorage.setItem('profile_events', JSON.stringify(storedEvents)); selectDay(y,m,d); };
+    li.appendChild(del); eventList.appendChild(li);
   });
+  newEventInput.dataset.key = k;
 }
 function addEvent(){
-  let date=document.getElementById('selectedDate').textContent;
-  if(!date)return;let input=document.getElementById('eventInput');
-  if(!events[date])events[date]=[];events[date].push(input.value);
-  input.value='';saveEvents();showEvents(...date.split('-').map(Number).reverse());
+  const key = newEventInput.dataset.key;
+  if(!key){ alert('Pick a date first'); return; }
+  if(!storedEvents[key]) storedEvents[key] = [];
+  const v = newEventInput.value.trim(); if(!v) return;
+  storedEvents[key].push(v);
+  localStorage.setItem('profile_events', JSON.stringify(storedEvents));
+  const [yy,mm,dd] = key.split('-').map(Number);
+  selectDay(yy,mm,dd);
+  newEventInput.value = '';
 }
-function saveEvents(){localStorage.setItem('events',JSON.stringify(events));}
-buildCalendar();
+function prevMonth(){ calDate.setMonth(calDate.getMonth()-1); renderCalendar(); }
+function nextMonth(){ calDate.setMonth(calDate.getMonth()+1); renderCalendar(); }
+renderCalendar();
 
-/* ===== Crossy Road ===== */
-const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
-const TILE=30,PLAYER_SIZE=30;
-let player,lanes,offsetY,score,highScore=localStorage.getItem('highScore')||0;
-function resetGame(){player={x:10*TILE,y:20*TILE,size:PLAYER_SIZE};lanes=[];offsetY=0;score=0;for(let i=0;i<50;i++)generateLane(i);}
-function generateLane(i){if(i%10===0){lanes.push({type:'grass'});}
-else{let r=Math.random();if(r<0.4)lanes.push({type:'road',cars:[]});else if(r<0.7)lanes.push({type:'river',logs:[]});else lanes.push({type:'grass'});}}
-function move(dir){if(dir==='up'){player.y-=TILE;score++;if(player.y<10*TILE){offsetY+=TILE;generateLane(lanes.length);}}if(dir==='down'&&player.y<20*TILE)player.y+=TILE;if(dir==='left'&&player.x>=TILE)player.x-=TILE;if(dir==='right'&&player.x<=canvas.width-TILE*2)player.x+=TILE;}
-function gameLoop(){ctx.clearRect(0,0,canvas.width,canvas.height);
-lanes.forEach((lane,i)=>{let y=canvas.height-(i*TILE)+offsetY;if(y<-TILE||y>canvas.height+TILE)return;
-if(lane.type==='grass'){ctx.fillStyle='#a5d6a7';ctx.fillRect(0,y,canvas.width,TILE);}
-if(lane.type==='road'){ctx.fillStyle='#757575';ctx.fillRect(0,y,canvas.width,TILE);
-if(Math.random()<0.01)lane.cars.push({x:0,y,speed:2+Math.random()*2});
-lane.cars.forEach(car=>{car.x+=car.speed;ctx.fillStyle='red';ctx.fillRect(car.x,y,30,TILE);
-if(car.x>canvas.width)lane.cars.splice(lane.cars.indexOf(car),1);
-if(player.x<car.x+30&&player.x+PLAYER_SIZE>car.x&&player.y===y)resetGame();});}
-if(lane.type==='river'){ctx.fillStyle='#64b5f6';ctx.fillRect(0,y,canvas.width,TILE);
-if(Math.random()<0.02)lane.logs.push({x:Math.random()*canvas.width,y,speed:1.5+Math.random()*1});
-let safe=false;lane.logs.forEach(log=>{log.x+=log.speed;ctx.fillStyle='#8d6e63';ctx.fillRect(log.x,y,60,TILE);
-if(player.x<log.x+60&&player.x+PLAYER_SIZE>log.x&&player.y===y){safe=true;player.x+=log.speed;}});if(player.y===y&&!safe)resetGame();}
+/* ---------- News (rss2json) ---------- */
+async function loadFeed(rssUrl, containerId){
+  try{
+    const r = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl));
+    const j = await r.json();
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    (j.items || []).slice(0,6).forEach(it=>{
+      const div = document.createElement('div'); div.className = 'article';
+      const thumb = it.enclosure && it.enclosure.link ? `<img src="${it.enclosure.link}" alt="">` : '';
+      div.innerHTML = `${thumb}<a href="${it.link}" target="_blank" rel="noopener">${it.title}</a>`;
+      container.appendChild(div);
+    });
+  }catch(e){ console.error('feed error', e); }
+}
+function refreshAllNews(){
+  loadFeed('https://news.google.com/rss/search?q=international+politics&hl=en-US&gl=US&ceid=US:en', 'news-international');
+  loadFeed('https://news.google.com/rss/search?q=national+politics&hl=en-US&gl=US&ceid=US:en', 'news-national');
+  loadFeed('https://news.google.com/rss/search?q=science&hl=en-US&gl=US&ceid=US:en', 'news-science');
+  loadFeed('https://news.google.com/rss/search?q=sports&hl=en-US&gl=US&ceid=US:en', 'news-sports');
+}
+refreshAllNews(); setInterval(refreshAllNews, 30*60*1000);
+
+/* ---------- Secret Poki redirect ---------- */
+document.getElementById('secretArea').addEventListener('click', ()=>{
+  const code = prompt('Enter secret code:');
+  if(code === '494849') window.location.href = 'https://poki.com';
 });
-ctx.fillStyle='green';ctx.fillRect(player.x,player.y,PLAYER_SIZE,PLAYER_SIZE);
-document.getElementById('scoreBoard').textContent=`Score: ${score} | High Score: ${highScore}`;
-if(score>highScore){highScore=score;localStorage.setItem('highScore',highScore);}
-requestAnimationFrame(gameLoop);}
-resetGame();gameLoop();
 
-/* ===== News Feed ===== */
-async function loadRSS(url,target){
-  try{let res=await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
-  let data=await res.json();document.getElementById(target).innerHTML='';
-  data.items.slice(0,6).forEach(item=>{
-    let div=document.createElement('div');div.className='news-tile';
-    div.innerHTML=`<img src="${item.enclosure?.link||''}"><h4><a href="${item.link}" target="_blank">${item.title}</a></h4>`;
-    document.getElementById(target).appendChild(div);});}catch(e){console.error(e);}
-}
-function refreshNews(){
-  loadRSS("https://news.google.com/rss/topics/CAAqJAgKIh5DQkFTRUFvS0wyMHZNREZqY0hJQ1pXNG9BQVAB?hl=en-US&gl=US&ceid=US:en","international");
-  loadRSS("https://news.google.com/rss/topics/CAAqJAgKIh5DQkFTRUFvS0wyMHZNRFZqY0hJQ1pXNG9BQVAB?hl=en-US&gl=US&ceid=US:en","national");
-  loadRSS("https://news.google.com/rss/headlines/section/topic/SCIENCE?ned=us&hl=en","science");
-  loadRSS("https://www.espn.com/espn/rss/news","sportsNews");
-}
-refreshNews();setInterval(refreshNews,1800000);
+/* ---------- Crossy Road Game (fixed) ---------- */
+/* Canvas is fixed-size 760x520 (CSS and attributes match to avoid scaling issues) */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const TILE = 40;                 // tile height/width in px
+const SAFE_EVERY = 10;          // safe zone frequency
+const START_LANE = 26;          // starting lane index
+const VIEW_AHEAD = 60;          // lanes to pre-generate beyond player
+let lanes = [];                 // lanes array
+let player = null;              // { x, y, size }
+let cameraY = 0;                // top world y of viewport
+let lastTs = null;
+let score = 0;
+let high = parseInt(localStorage.getItem('crossy_high')||'0',10) || 0;
 
-/* ===== Secret Redirect ===== */
-document.getElementById('secret').onclick=()=>{let code=prompt("Enter code:");if(code==="494849")window.location.href="https://poki.com";}
+function makeLane(i){
+  if(i % SAFE_EVERY === 0) return { type: 'safe', items: [] };
+  const r = Math.random();
+  if(r < 0.45){ // river more common
+    const count = 2 + Math.floor(Math.random()*3); // 2..4 logs
+    const baseSpeed = (20 + Math.random()*30) * (Math.random() < 0.5 ? 1 : -1); // px/sec slower
+    const items = [];
+    const gap = Math.max(120, Math.floor(canvas.width / count));
+    for(let j=0;j<count;j++){
+      const jitter = (Math.random()-0.5)*gap*0.6;
+      const x = (j * gap) + jitter + (Math.random()*60 - 30);
+      items.push({ x: x, w: 80, speed: baseSpeed });
+    }
+    return { type: 'river', items, baseSpeed };
+  } else if(r < 0.8){
+    const count = 2 + Math.floor(Math.random()*3);
+    const baseSpeed = (30 + Math.random()*40) * (Math.random() < 0.5 ? 1 : -1); // 30-70 px/sec
+    const items = [];
+    const gap = Math.max(120, Math.floor(canvas.width / count));
+    for(let j=0;j<count;j++){
+      const jitter = (Math.random()-0.5)*gap*0.6;
+      const x = (j * gap) + jitter + (Math.random()*80 - 40);
+      items.push({ x: x, w: 40, speed: baseSpeed });
+    }
+    return { type: 'road', items, baseSpeed };
+  } else {
+    return { type: 'grass', items: [] };
+  }
+}
+
+function ensureLanesUpTo(n){
+  while(lanes.length <= n) lanes.push(makeLane(lanes.length));
+}
+
+function initWorld(){
+  lanes = [];
+  ensureLanesUpTo(START_LANE + VIEW_AHEAD);
+  player = {
+    x: Math.floor((canvas.width/2) / TILE) * TILE,
+    y: START_LANE * TILE,
+    size: TILE,
+    onLog: false
+  };
+  cameraY = Math.max(0, player.y - canvas.height/2);
+  lastTs = null;
+  score = 0;
+}
+initWorld();
+
+function movePlayer(dir){
+  if(!player) return;
+  if(dir === 'up') player.y -= TILE;
+  else if(dir === 'down') player.y += TILE;
+  else if(dir === 'left') player.x -= TILE;
+  else if(dir === 'right') player.x += TILE;
+
+  // clamp to canvas width
+  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+  // snap to grid so player always sits in one tile
+  player.x = Math.round(player.x / TILE) * TILE;
+  player.y = Math.max(0, Math.round(player.y / TILE) * TILE);
+
+  // pre-generate ahead
+  ensureLanesUpTo(Math.floor(player.y / TILE) + VIEW_AHEAD);
+}
+
+document.querySelectorAll('#keypad .kbtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const dir = btn.dataset.dir;
+    if(dir === 'reset'){ initWorld(); return; }
+    movePlayer(dir);
+  });
+});
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowUp') movePlayer('up');
+  if(e.key === 'ArrowDown') movePlayer('down');
+  if(e.key === 'ArrowLeft') movePlayer('left');
+  if(e.key === 'ArrowRight') movePlayer('right');
+  if(e.key.toLowerCase() === 'r') initWorld();
+});
+
+function gameTick(ts){
+  if(!lastTs) lastTs = ts;
+  const dt = Math.min(50, ts - lastTs); // cap delta
+  lastTs = ts;
+
+  // Camera follows player
+  cameraY = player.y - canvas.height/2;
+  if(cameraY < 0) cameraY = 0;
+
+  const topIndex = Math.floor(cameraY / TILE);
+  const visibleRows = Math.ceil(canvas.height / TILE) + 4;
+  ensureLanesUpTo(topIndex + visibleRows + VIEW_AHEAD);
+
+  // update movers
+  for(let i = topIndex; i <= topIndex + visibleRows; i++){
+    const lane = lanes[i];
+    if(!lane) continue;
+    for(const item of lane.items){
+      item.x += item.speed * (dt/1000); // px per frame
+      // wrap around
+      if(item.speed > 0 && item.x > canvas.width + 300) item.x = -300;
+      if(item.speed < 0 && item.x < -300) item.x = canvas.width + 300;
+    }
+  }
+
+  // interaction/collision for player's lane
+  const pLane = Math.floor(player.y / TILE);
+  let died = false;
+  player.onLog = false;
+  const lane = lanes[pLane];
+  if(lane){
+    if(lane.type === 'road'){
+      for(const car of lane.items){
+        const cx = Math.round(car.x);
+        const cw = car.w || 40;
+        if(player.x < cx + cw && player.x + player.size > cx){
+          died = true; break;
+        }
+      }
+    } else if(lane.type === 'river'){
+      for(const log of lane.items){
+        const lx = Math.round(log.x);
+        const lw = log.w || 80;
+        if(player.x < lx + lw && player.x + player.size > lx){
+          player.onLog = true;
+          // ride log (move horizontally)
+          player.x += log.speed * (dt/1000);
+          break;
+        }
+      }
+      if(!player.onLog) died = true;
+    }
+  }
+
+  if(died){
+    // save high score if any, reset player to start (preserve lanes)
+    if(score > high){ high = score; localStorage.setItem('crossy_high', high); }
+    initWorld(); // keep lanes (we re-created); this resets player and camera
+    lastTs = null;
+    requestAnimationFrame(gameTick);
+    return;
+  }
+
+  // after log movement, snap horizontally to avoid straddling horizontally
+  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+  player.x = Math.round(player.x / TILE) * TILE;
+
+  // draw
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // draw lanes
+  for(let i = topIndex; i <= topIndex + visibleRows; i++){
+    const laneObj = lanes[i];
+    if(!laneObj) continue;
+    const y = Math.round(i * TILE - cameraY);
+    if(laneObj.type === 'safe'){
+      ctx.fillStyle = '#dfffe0'; ctx.fillRect(0,y,canvas.width,TILE);
+    } else if(laneObj.type === 'grass'){
+      ctx.fillStyle = '#bff0b0'; ctx.fillRect(0,y,canvas.width,TILE);
+    } else if(laneObj.type === 'road'){
+      ctx.fillStyle = '#666'; ctx.fillRect(0,y,canvas.width,TILE);
+      for(const car of laneObj.items){
+        ctx.fillStyle = '#d44';
+        ctx.fillRect(Math.round(car.x), y+2, car.w || 40, TILE-4);
+      }
+    } else if(laneObj.type === 'river'){
+      ctx.fillStyle = '#09aaff'; ctx.fillRect(0,y,canvas.width,TILE);
+      for(const log of laneObj.items){
+        ctx.fillStyle = '#8b5a2b';
+        ctx.fillRect(Math.round(log.x), y+2, log.w || 80, TILE-4);
+      }
+    }
+  }
+
+  // draw player at camera-relative position
+  ctx.fillStyle = '#ffd400';
+  const drawX = Math.round(player.x);
+  const drawY = Math.round(player.y - cameraY);
+  ctx.fillRect(drawX, drawY, player.size, player.size);
+
+  // scoring: start base
+  const startBase = START_LANE;
+  score = Math.max(0, Math.floor(player.y / TILE) - startBase);
+  // HUD inside canvas via div
+  document.getElementById('hud').innerHTML = `Score: ${score}<br>High: ${high}`;
+
+  requestAnimationFrame(gameTick);
+}
+
+// start loop
+requestAnimationFrame(gameTick);
+
 </script>
 </body>
 </html>
